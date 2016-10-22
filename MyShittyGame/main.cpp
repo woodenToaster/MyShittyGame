@@ -15,6 +15,7 @@
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_path);
+void update(GLFWwindow* window);
 
 static void error_callback(int e, const char *d) {
     printf("Error %d: %s\n", e, d);
@@ -66,9 +67,8 @@ int main(int argc, char* argv[]) {
     GLint translationMatrixLocation = glGetUniformLocation(programID, "translationMatrix");
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
 
-    while(!glfwWindowShouldClose(win))
-    {
-        glfwPollEvents();
+    while(!glfwWindowShouldClose(win)) {
+
         glfwGetWindowSize(win, &width, &height);
         glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -83,6 +83,8 @@ int main(int argc, char* argv[]) {
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glDisableVertexAttribArray(0);
 
+        glfwPollEvents();
+        update(win);
         glfwSwapBuffers(win);
     }
 
@@ -93,24 +95,27 @@ int main(int argc, char* argv[]) {
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     switch(key) {
-        case GLFW_KEY_UP:
-            yOffset += 0.01f;
-            break;
-        case GLFW_KEY_DOWN:
-            yOffset -= 0.01f;
-            break;
-        case GLFW_KEY_LEFT:
-            xOffset -= 0.01f;
-            break;
-        case GLFW_KEY_RIGHT:
-            xOffset += 0.01f;
-            break;
         case GLFW_KEY_ESCAPE:
             if(action == GLFW_PRESS) {
                 glfwSetWindowShouldClose(window, GLFW_TRUE);
             }
         default:
             break;
+    }
+}
+
+void update(GLFWwindow* window) {
+    if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        yOffset += 0.01f;
+    }
+    if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        yOffset -= 0.01f;
+    }
+    if(glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        xOffset -= 0.01f;
+    }
+    if(glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        xOffset += 0.01f;
     }
 }
 
