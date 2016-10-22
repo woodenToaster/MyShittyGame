@@ -15,45 +15,123 @@
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_path);
-void update(GLFWwindow* window);
-void updateEnemies();
 
 static void error_callback(int e, const char *d) {
     printf("Error %d: %s\n", e, d);
 }
 
-float xOffset = 0;
-float yOffset = 0;
-float xOffsetEnemy = 0;
-float yOffsetEnemy = 0;
-bool enemyGoingUp = true;
-bool enemyGoingRight = true;
+struct Entity {
+    GLfloat *vertexData;
+    GLuint size = 18;
+    GLuint vertexArrayId;
+    GLuint vertexBuffer;
+    float xOffset = 0;
+    float yOffset = 0;
+    glm::vec3 color;
+    glm::mat4 transMatrix;
+    glm::vec3 inputColor;
 
-static GLfloat playerVertexData[] = {
-    -0.1f, 0.1f, 0.0f,
-    0.0f, 0.1f, 0.0f,
-    -0.1f, 0.0f, 0.0f,
-    0.0f, 0.1f, 0.0f,
-    0.0f, 0.0f, 0.0f,
-    -0.1f, 0.0f, 0.0f,
+    ~Entity() {
+        delete[] vertexData;
+        vertexData = nullptr;
+    }
+
+    void init(glm::vec3 entityColor) {
+        vertexData = new GLfloat[18] {
+            -0.1f, 0.1f, 0.0f,
+            0.0f, 0.1f, 0.0f,
+            -0.1f, 0.0f, 0.0f,
+            0.0f, 0.1f, 0.0f,
+            0.0f, 0.0f, 0.0f,
+            -0.1f, 0.0f, 0.0f,
+        };
+        color = entityColor;
+        initVertexArray();
+        initBuffer();
+    }
+
+    void initVertexArray() {
+        glGenVertexArrays(1, &vertexArrayId);
+        glBindVertexArray(vertexArrayId);
+    }
+
+    void initBuffer() {
+        glGenBuffers(1, &vertexBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)* size, vertexData, GL_DYNAMIC_DRAW);
+    }
+
+    void updateUniforms(GLint translationMatrixLocation, GLint inputColorLocation) {
+        transMatrix = glm::translate(xOffset, yOffset, 0.0f);
+        inputColor = color;
+        glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
+        glUniform3fv(inputColorLocation, 1, &inputColor[0]);
+    }
+
+    void draw() {
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDisableVertexAttribArray(0);
+    }
+
+    virtual void updatePosition(GLFWwindow* window) = 0;
 };
 
-static GLfloat enemy1VertexData[] = {
-    -0.1f, 0.1f, 0.0f,
-    0.0f, 0.1f, 0.0f,
-    -0.1f, 0.0f, 0.0f,
-    0.0f, 0.1f, 0.0f,
-    0.0f, 0.0f, 0.0f,
-    -0.1f, 0.0f, 0.0f,
+struct Player : Entity {
+    void updatePosition(GLFWwindow* window) {
+        if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+            yOffset += 0.01f;
+        }
+        if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+            yOffset -= 0.01f;
+        }
+        if(glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+            xOffset -= 0.01f;
+        }
+        if(glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+            xOffset += 0.01f;
+        }
+    }
 };
 
-static GLfloat enemy2VertexData[] = {
-    -0.1f, 0.1f, 0.0f,
-    0.0f, 0.1f, 0.0f,
-    -0.1f, 0.0f, 0.0f,
-    0.0f, 0.1f, 0.0f,
-    0.0f, 0.0f, 0.0f,
-    -0.1f, 0.0f, 0.0f,
+struct VerticalEnemy : Entity {
+    bool movingUp = true;
+
+    void updatePosition(GLFWwindow* window) {
+        if(yOffset >= 1.0f && movingUp) {
+            movingUp = false;
+        }
+        if(yOffset <= -1.0f && !movingUp) {
+            movingUp = true;
+        }
+        if(movingUp) {
+            yOffset += 0.02f;
+        }
+        else {
+            yOffset -= 0.02f;
+        }
+    }
+};
+
+struct HorizontalEnemy : Entity {
+    bool movingRight = true;
+
+    void updatePosition(GLFWwindow* window) {
+        if(xOffset >= 1.0f && movingRight) {
+            movingRight = false;
+        }
+        if(xOffset <= -1.0f && !movingRight) {
+            movingRight = true;
+        }
+        if(movingRight) {
+            xOffset += 0.02f;
+        }
+        else {
+            xOffset -= 0.02f;
+        }
+    }
 };
 
 int main(int argc, char* argv[]) {
@@ -76,32 +154,19 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
 
-    GLuint playerVertexArrayId;
-    glGenVertexArrays(1, &playerVertexArrayId);
-    glBindVertexArray(playerVertexArrayId);
+    std::vector<Entity*> entities;
 
-    GLuint enemy1VertexArrayId;
-    glGenVertexArrays(1, &enemy1VertexArrayId);
-    glBindVertexArray(enemy1VertexArrayId);
+    Player player;
+    VerticalEnemy vertEnemy;
+    HorizontalEnemy horizEnemy;
 
-    GLuint enemy2VertexArrayId;
-    glGenVertexArrays(1, &enemy2VertexArrayId);
-    glBindVertexArray(enemy2VertexArrayId);
+    player.init(glm::vec3(0.0f, 1.0f, 0.0f));
+    vertEnemy.init(glm::vec3(1.0f, 0.0f, 0.0f));
+    horizEnemy.init(glm::vec3(0.0f, 0.0f, 1.0f));
 
-    GLuint playerVertexBuffer;
-    glGenBuffers(1, &playerVertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, playerVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(playerVertexData), playerVertexData, GL_DYNAMIC_DRAW);
-
-    GLuint enemy1VertexBuffer;
-    glGenBuffers(1, &enemy1VertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, enemy1VertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(enemy1VertexData), enemy1VertexData, GL_DYNAMIC_DRAW);
-
-    GLuint enemy2VertexBuffer;
-    glGenBuffers(1, &enemy2VertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, enemy2VertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(enemy2VertexData), enemy2VertexData, GL_DYNAMIC_DRAW);
+    entities.push_back(&player);
+    entities.push_back(&vertEnemy);
+    entities.push_back(&horizEnemy);
 
     glfwSetKeyCallback(win, keyCallback);
     GLuint programId = loadShaders("SimpleVertexShader.vert", "SimpleFragmentShader.frag");
@@ -116,48 +181,13 @@ int main(int argc, char* argv[]) {
 
         glUseProgram(programId);
 
-        // Player uniforms
-        glm::mat4 transMatrix = glm::translate(xOffset, yOffset, 0.0f);
-        glm::vec3 inputColor = glm::vec3(0.0f, 1.0f, 0.0f);
-        glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
-        glUniform3fv(inputColorLocation, 1, &inputColor[0]);
-
-        // Draw player
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, playerVertexBuffer);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glDisableVertexAttribArray(0);
-
-        // Enemy 1 uniforms
-        transMatrix = glm::translate(0.0f, yOffsetEnemy, 0.0f);
-        inputColor = glm::vec3(1.0f, 0.0f, 0.0f);
-        glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
-        glUniform3fv(inputColorLocation, 1, &inputColor[0]);
-
-        // Draw enemy 1
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, enemy1VertexBuffer);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glDisableVertexAttribArray(0);
-
-        // Enemy 2 uniforms
-        transMatrix = glm::translate(xOffsetEnemy, 0.0f, 0.0f);
-        inputColor = glm::vec3(0.0f, 0.0f, 1.0f);
-        glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
-        glUniform3fv(inputColorLocation, 1, &inputColor[0]);
-
-        // Draw enemy 2
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, enemy2VertexBuffer);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glDisableVertexAttribArray(0);
+        for(auto* entity : entities) {
+            entity->updateUniforms(translationMatrixLocation, inputColorLocation);
+            entity->draw();
+            entity->updatePosition(win);
+        }
 
         glfwPollEvents();
-        update(win);
-        updateEnemies();
         glfwSwapBuffers(win);
     }
 
@@ -174,50 +204,6 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             }
         default:
             break;
-    }
-}
-
-void update(GLFWwindow* window) {
-    if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-        yOffset += 0.01f;
-    }
-    if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-        yOffset -= 0.01f;
-    }
-    if(glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-        xOffset -= 0.01f;
-    }
-    if(glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-        xOffset += 0.01f;
-    }
-}
-
-void updateEnemies() {
-
-    if(yOffsetEnemy >= 1.0f && enemyGoingUp) {
-        enemyGoingUp = false;
-    }
-    if(yOffsetEnemy <= -1.0f && !enemyGoingUp) {
-        enemyGoingUp = true;
-    }
-    if(enemyGoingUp) {
-        yOffsetEnemy += 0.02f;
-    }
-    else {
-        yOffsetEnemy -= 0.02f;
-    }
-
-    if(xOffsetEnemy >= 1.0f && enemyGoingRight) {
-        enemyGoingRight = false;
-    }
-    if(xOffsetEnemy <= -1.0f && !enemyGoingRight) {
-        enemyGoingRight = true;
-    }
-    if(enemyGoingRight) {
-        xOffsetEnemy += 0.02f;
-    }
-    else {
-        xOffsetEnemy -= 0.02f;
     }
 }
 
@@ -301,7 +287,6 @@ GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_pat
         glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
         printf("%s\n", &ProgramErrorMessage[0]);
     }
-
 
     glDetachShader(ProgramID, VertexShaderID);
     glDetachShader(ProgramID, FragmentShaderID);
