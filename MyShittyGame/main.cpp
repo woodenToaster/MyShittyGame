@@ -16,6 +16,7 @@
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_path);
 void update(GLFWwindow* window);
+void updateEnemy();
 
 static void error_callback(int e, const char *d) {
     printf("Error %d: %s\n", e, d);
@@ -23,8 +24,20 @@ static void error_callback(int e, const char *d) {
 
 float xOffset = 0;
 float yOffset = 0;
+float xOffsetEnemy = 0;
+float yOffsetEnemy = 0;
+bool enemyGoingUp = true;
 
-static GLfloat g_vertex_buffer_data[] = {
+static GLfloat playerVertexData[] = {
+    -0.1f, 0.1f, 0.0f,
+    0.0f, 0.1f, 0.0f,
+    -0.1f, 0.0f, 0.0f,
+    0.0f, 0.1f, 0.0f,
+    0.0f, 0.0f, 0.0f,
+    -0.1f, 0.0f, 0.0f,
+};
+
+static GLfloat enemyVertexData[] = {
     -0.1f, 0.1f, 0.0f,
     0.0f, 0.1f, 0.0f,
     -0.1f, 0.0f, 0.0f,
@@ -47,25 +60,36 @@ int main(int argc, char* argv[]) {
     glfwMakeContextCurrent(win);
     glfwGetWindowSize(win, &width, &height);
 
-    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     glewExperimental = 1;
     if(glewInit() != GLEW_OK) {
         fprintf(stderr, "Failed to setup GLEW\n");
         exit(1);
     }
 
-    GLuint VertexArrayID;
-    glGenVertexArrays(1, &VertexArrayID);
-    glBindVertexArray(VertexArrayID);
+    GLuint playerVertexArrayId;
+    glGenVertexArrays(1, &playerVertexArrayId);
+    glBindVertexArray(playerVertexArrayId);
 
-    GLuint vertexbuffer;
-    glGenBuffers(1, &vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    GLuint enemyVertexArrayId;
+    glGenVertexArrays(1, &enemyVertexArrayId);
+    glBindVertexArray(enemyVertexArrayId);
+
+    GLuint playerVertexBuffer;
+    glGenBuffers(1, &playerVertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, playerVertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(playerVertexData), playerVertexData, GL_DYNAMIC_DRAW);
+
+
+    GLuint enemyVertexBuffer;
+    glGenBuffers(1, &enemyVertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, enemyVertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(enemyVertexData), enemyVertexData, GL_DYNAMIC_DRAW);
+
 
     glfwSetKeyCallback(win, keyCallback);
-    GLuint programID = loadShaders("SimpleVertexShader.vert", "SimpleFragmentShader.frag");
-    GLint translationMatrixLocation = glGetUniformLocation(programID, "translationMatrix");
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_DYNAMIC_DRAW);
+    GLuint programId = loadShaders("SimpleVertexShader.vert", "SimpleFragmentShader.frag");
+    GLint translationMatrixLocation = glGetUniformLocation(programId, "translationMatrix");
+    GLint inputColorLocation = glGetUniformLocation(programId, "inputColor");
 
     while(!glfwWindowShouldClose(win)) {
 
@@ -73,18 +97,37 @@ int main(int argc, char* argv[]) {
         glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glUseProgram(programID);
-        glm::mat4 transMatrix = glm::translate(xOffset, yOffset, 0.0f);
-        glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
+        glUseProgram(programId);
 
+        // Player uniforms
+        glm::mat4 transMatrix = glm::translate(xOffset, yOffset, 0.0f);
+        glm::vec3 inputColor = glm::vec3(0.0f, 1.0f, 0.0f);
+        glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
+        glUniform3fv(inputColorLocation, 1, &inputColor[0]);
+
+        // Draw player
         glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, playerVertexBuffer);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDisableVertexAttribArray(0);
+
+        // Enemy uniforms
+        transMatrix = glm::translate(0.0f, yOffsetEnemy, 0.0f);
+        inputColor = glm::vec3(1.0f, 0.0f, 0.0f);
+        glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
+        glUniform3fv(inputColorLocation, 1, &inputColor[0]);
+
+        // Draw enemy
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, enemyVertexBuffer);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glDisableVertexAttribArray(0);
 
         glfwPollEvents();
         update(win);
+        updateEnemy();
         glfwSwapBuffers(win);
     }
 
@@ -119,6 +162,22 @@ void update(GLFWwindow* window) {
     }
 }
 
+void updateEnemy() {
+
+    if(yOffsetEnemy >= 1.0f && enemyGoingUp) {
+        enemyGoingUp = false;
+    }
+    if(yOffsetEnemy <= -1.0f && !enemyGoingUp) {
+        enemyGoingUp = true;
+    }
+    if(enemyGoingUp) {
+        yOffsetEnemy += 0.02f;
+    }
+    else {
+        yOffsetEnemy -= 0.02f;
+    }
+}
+
 GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_path){
 
     // Create the shaders
@@ -134,6 +193,7 @@ GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_pat
             VertexShaderCode += "\n" + Line;
         VertexShaderStream.close();
     }
+
     else{
         printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", vertex_file_path);
         getchar();
@@ -153,7 +213,6 @@ GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_pat
     GLint Result = GL_FALSE;
     int InfoLogLength;
 
-
     // Compile Vertex Shader
     printf("Compiling shader : %s\n", vertex_file_path);
     char const * VertexSourcePointer = VertexShaderCode.c_str();
@@ -169,8 +228,6 @@ GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_pat
         printf("%s\n", &VertexShaderErrorMessage[0]);
     }
 
-
-
     // Compile Fragment Shader
     printf("Compiling shader : %s\n", fragment_file_path);
     char const * FragmentSourcePointer = FragmentShaderCode.c_str();
@@ -185,8 +242,6 @@ GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_pat
         glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
         printf("%s\n", &FragmentShaderErrorMessage[0]);
     }
-
-
 
     // Link the program
     printf("Linking program\n");
