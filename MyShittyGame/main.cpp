@@ -16,7 +16,7 @@
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_path);
 void update(GLFWwindow* window);
-void updateEnemy();
+void updateEnemies();
 
 static void error_callback(int e, const char *d) {
     printf("Error %d: %s\n", e, d);
@@ -27,6 +27,7 @@ float yOffset = 0;
 float xOffsetEnemy = 0;
 float yOffsetEnemy = 0;
 bool enemyGoingUp = true;
+bool enemyGoingRight = true;
 
 static GLfloat playerVertexData[] = {
     -0.1f, 0.1f, 0.0f,
@@ -37,7 +38,16 @@ static GLfloat playerVertexData[] = {
     -0.1f, 0.0f, 0.0f,
 };
 
-static GLfloat enemyVertexData[] = {
+static GLfloat enemy1VertexData[] = {
+    -0.1f, 0.1f, 0.0f,
+    0.0f, 0.1f, 0.0f,
+    -0.1f, 0.0f, 0.0f,
+    0.0f, 0.1f, 0.0f,
+    0.0f, 0.0f, 0.0f,
+    -0.1f, 0.0f, 0.0f,
+};
+
+static GLfloat enemy2VertexData[] = {
     -0.1f, 0.1f, 0.0f,
     0.0f, 0.1f, 0.0f,
     -0.1f, 0.0f, 0.0f,
@@ -56,7 +66,7 @@ int main(int argc, char* argv[]) {
         fprintf(stdout, "[GFLW] failed to init!\n");
         exit(1);
     }
-    win = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Demo", NULL, NULL);
+    win = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "My Shitty Game", NULL, NULL);
     glfwMakeContextCurrent(win);
     glfwGetWindowSize(win, &width, &height);
 
@@ -70,21 +80,28 @@ int main(int argc, char* argv[]) {
     glGenVertexArrays(1, &playerVertexArrayId);
     glBindVertexArray(playerVertexArrayId);
 
-    GLuint enemyVertexArrayId;
-    glGenVertexArrays(1, &enemyVertexArrayId);
-    glBindVertexArray(enemyVertexArrayId);
+    GLuint enemy1VertexArrayId;
+    glGenVertexArrays(1, &enemy1VertexArrayId);
+    glBindVertexArray(enemy1VertexArrayId);
+
+    GLuint enemy2VertexArrayId;
+    glGenVertexArrays(1, &enemy2VertexArrayId);
+    glBindVertexArray(enemy2VertexArrayId);
 
     GLuint playerVertexBuffer;
     glGenBuffers(1, &playerVertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, playerVertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(playerVertexData), playerVertexData, GL_DYNAMIC_DRAW);
 
+    GLuint enemy1VertexBuffer;
+    glGenBuffers(1, &enemy1VertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, enemy1VertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(enemy1VertexData), enemy1VertexData, GL_DYNAMIC_DRAW);
 
-    GLuint enemyVertexBuffer;
-    glGenBuffers(1, &enemyVertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, enemyVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(enemyVertexData), enemyVertexData, GL_DYNAMIC_DRAW);
-
+    GLuint enemy2VertexBuffer;
+    glGenBuffers(1, &enemy2VertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, enemy2VertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(enemy2VertexData), enemy2VertexData, GL_DYNAMIC_DRAW);
 
     glfwSetKeyCallback(win, keyCallback);
     GLuint programId = loadShaders("SimpleVertexShader.vert", "SimpleFragmentShader.frag");
@@ -112,22 +129,35 @@ int main(int argc, char* argv[]) {
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glDisableVertexAttribArray(0);
 
-        // Enemy uniforms
+        // Enemy 1 uniforms
         transMatrix = glm::translate(0.0f, yOffsetEnemy, 0.0f);
         inputColor = glm::vec3(1.0f, 0.0f, 0.0f);
         glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
         glUniform3fv(inputColorLocation, 1, &inputColor[0]);
 
-        // Draw enemy
+        // Draw enemy 1
         glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, enemyVertexBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, enemy1VertexBuffer);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDisableVertexAttribArray(0);
+
+        // Enemy 2 uniforms
+        transMatrix = glm::translate(xOffsetEnemy, 0.0f, 0.0f);
+        inputColor = glm::vec3(0.0f, 0.0f, 1.0f);
+        glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
+        glUniform3fv(inputColorLocation, 1, &inputColor[0]);
+
+        // Draw enemy 2
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, enemy2VertexBuffer);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glDisableVertexAttribArray(0);
 
         glfwPollEvents();
         update(win);
-        updateEnemy();
+        updateEnemies();
         glfwSwapBuffers(win);
     }
 
@@ -162,7 +192,7 @@ void update(GLFWwindow* window) {
     }
 }
 
-void updateEnemy() {
+void updateEnemies() {
 
     if(yOffsetEnemy >= 1.0f && enemyGoingUp) {
         enemyGoingUp = false;
@@ -175,6 +205,19 @@ void updateEnemy() {
     }
     else {
         yOffsetEnemy -= 0.02f;
+    }
+
+    if(xOffsetEnemy >= 1.0f && enemyGoingRight) {
+        enemyGoingRight = false;
+    }
+    if(xOffsetEnemy <= -1.0f && !enemyGoingRight) {
+        enemyGoingRight = true;
+    }
+    if(enemyGoingRight) {
+        xOffsetEnemy += 0.02f;
+    }
+    else {
+        xOffsetEnemy -= 0.02f;
     }
 }
 
