@@ -192,6 +192,54 @@ int main(int argc, char* argv[]) {
     GLint translationMatrixLocation = glGetUniformLocation(programId, "translationMatrix");
     GLint inputColorLocation = glGetUniformLocation(programId, "inputColor");
 
+    // Set up arena
+    GLuint arenaVertexArrayId;
+    glGenVertexArrays(1, &arenaVertexArrayId);
+    glBindVertexArray(arenaVertexArrayId);
+
+    GLuint arenaVertexBuffer;
+    glGenBuffers(1, &arenaVertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, arenaVertexBuffer);
+
+    GLfloat arenaVertexData[] = {
+        -0.75f, 1.0f, 0.0f,
+        -0.75f, 0.95f, 0.0f,
+        0.75f, 1.0f, 0.0f,
+        -0.75f, 0.95f, 0.0f,
+        0.75f, 1.0f, 0.0f,
+        0.75f, 0.95f, 0.0f,
+
+        -0.75f, -1.0f, 0.0f,
+        -0.75f, -0.95f, 0.0f,
+        0.75f, -1.0f, 0.0f,
+        -0.75f, -0.95f, 0.0f,
+        0.75f, -0.95f, 0.0f,
+        0.75f, -1.0f, 0.0f,
+
+        -0.75f, 0.95f, 0.0f,
+        -0.75f, -0.95f, 0.0f,
+        -0.7f, -0.95f, 0.0f,
+        -0.75f, 0.95f, 0.0f,
+        -0.7f, 0.95f, 0.0f,
+        -0.7f, -0.95f, 0.0f,
+
+        0.75f, 0.95f, 0.0f,
+        0.75f, -0.95f, 0.0f,
+        0.7f, -0.95f, 0.0f,
+        0.7f, 0.95f, 0.0f,
+        0.75f, 0.95f, 0.0f,
+        0.7f, -0.95f, 0.0f
+    };
+
+    GLushort arenaIndexData[] = {
+        0, 1, 2,  // Top wall
+        1, 2, 3,
+        4, 5, 6,  // Bottom wall
+        5, 6, 7
+    };
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(arenaVertexData), arenaVertexData, GL_STATIC_DRAW);
+
     while(!glfwWindowShouldClose(win.win)) {
 
         glfwGetWindowSize(win.win, &win.width, &win.height);
@@ -206,6 +254,17 @@ int main(int argc, char* argv[]) {
             entity->draw();
             entity->updatePosition(win.win);
         }
+
+        glm::mat4 transMatrix = glm::translate(0.0f, 0.0f, 0.0f);
+        glm::vec4 inputColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
+        glUniform3fv(inputColorLocation, 1, &inputColor[0]);
+
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, arenaVertexBuffer);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glDrawArrays(GL_TRIANGLES, 0, 24);
+        glDisableVertexAttribArray(0);
 
         glfwPollEvents();
         glfwSwapBuffers(win.win);
