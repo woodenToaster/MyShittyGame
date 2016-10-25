@@ -16,9 +16,41 @@
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_path);
 
-static void error_callback(int e, const char *d) {
-    printf("Error %d: %s\n", e, d);
-}
+
+
+struct Window {
+    int width;
+    int height;
+    const int windowWidth = 1200;
+    const int windowHeight = 800;
+    GLFWwindow* win;
+
+    ~Window() {
+        glfwTerminate();
+    }
+
+    static void error_callback(int e, const char *d) {
+        printf("Error %d: %s\n", e, d);
+    }
+
+    void init() {
+        glfwSetErrorCallback(error_callback);
+
+        if(!glfwInit()) {
+            fprintf(stdout, "[GFLW] failed to init!\n");
+            exit(1);
+        }
+
+        win = glfwCreateWindow(windowWidth, windowHeight, "My Shitty Game", NULL, NULL);
+        glfwMakeContextCurrent(win);
+
+        glewExperimental = 1;
+        if(glewInit() != GLEW_OK) {
+            fprintf(stderr, "Failed to setup GLEW\n");
+            exit(1);
+        }
+    }
+};
 
 struct Entity {
     GLfloat *vertexData;
@@ -134,25 +166,12 @@ struct HorizontalEnemy : Entity {
     }
 };
 
+
+
 int main(int argc, char* argv[]) {
     
-    static GLFWwindow *win;
-    int width = 0, height = 0;
-
-    glfwSetErrorCallback(error_callback);
-    if(!glfwInit()) {
-        fprintf(stdout, "[GFLW] failed to init!\n");
-        exit(1);
-    }
-    win = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "My Shitty Game", NULL, NULL);
-    glfwMakeContextCurrent(win);
-    glfwGetWindowSize(win, &width, &height);
-
-    glewExperimental = 1;
-    if(glewInit() != GLEW_OK) {
-        fprintf(stderr, "Failed to setup GLEW\n");
-        exit(1);
-    }
+    Window win;
+    win.init();
 
     std::vector<Entity*> entities;
 
@@ -168,30 +187,30 @@ int main(int argc, char* argv[]) {
     entities.push_back(&vertEnemy);
     entities.push_back(&horizEnemy);
 
-    glfwSetKeyCallback(win, keyCallback);
+    glfwSetKeyCallback(win.win, keyCallback);
     GLuint programId = loadShaders("SimpleVertexShader.vert", "SimpleFragmentShader.frag");
     GLint translationMatrixLocation = glGetUniformLocation(programId, "translationMatrix");
     GLint inputColorLocation = glGetUniformLocation(programId, "inputColor");
 
-    while(!glfwWindowShouldClose(win)) {
+    while(!glfwWindowShouldClose(win.win)) {
 
-        glfwGetWindowSize(win, &width, &height);
-        glViewport(0, 0, width, height);
+        glfwGetWindowSize(win.win, &win.width, &win.height);
+        glViewport(0, 0, win.width, win.height);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(programId);
 
+        // Update enemies and player
         for(auto* entity : entities) {
             entity->updateUniforms(translationMatrixLocation, inputColorLocation);
             entity->draw();
-            entity->updatePosition(win);
+            entity->updatePosition(win.win);
         }
 
         glfwPollEvents();
-        glfwSwapBuffers(win);
+        glfwSwapBuffers(win.win);
     }
 
-    glfwTerminate();
     return 0;
 }
 
