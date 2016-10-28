@@ -13,16 +13,11 @@
 #define WINDOW_WIDTH 1200
 #define WINDOW_HEIGHT 800
 
-void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_path);
-
-
-
 struct Window {
     int width;
     int height;
-    const int windowWidth = 1200;
-    const int windowHeight = 800;
+    const int windowWidth = WINDOW_WIDTH;
+    const int windowHeight = WINDOW_HEIGHT;
     GLFWwindow* win;
 
     ~Window() {
@@ -59,27 +54,28 @@ struct Entity {
     GLuint vertexBuffer;
     float xOffset = 0;
     float yOffset = 0;
+    glm::vec3 startingPosition;
     glm::vec3 color;
     glm::mat4 transMatrix;
     glm::vec3 inputColor;
 
+    enum direction {UP, DOWN, LEFT, RIGHT};
+
+    Entity(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength) :
+        color(entityColor),
+        xOffset(startingPos.x),
+        yOffset(startingPos.y),
+        startingPosition(startingPos),
+        vertexData(data),
+        size(dataLength) {
+
+        initVertexArray();
+        initBuffer();
+    }
+
     ~Entity() {
         delete[] vertexData;
         vertexData = nullptr;
-    }
-
-    void init(glm::vec3 entityColor) {
-        vertexData = new GLfloat[18] {
-            -0.1f, 0.1f, 0.0f,
-            0.0f, 0.1f, 0.0f,
-            -0.1f, 0.0f, 0.0f,
-            0.0f, 0.1f, 0.0f,
-            0.0f, 0.0f, 0.0f,
-            -0.1f, 0.0f, 0.0f,
-        };
-        color = entityColor;
-        initVertexArray();
-        initBuffer();
     }
 
     void initVertexArray() {
@@ -93,13 +89,6 @@ struct Entity {
         glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)* size, vertexData, GL_DYNAMIC_DRAW);
     }
 
-    void updateUniforms(GLint translationMatrixLocation, GLint inputColorLocation) {
-        transMatrix = glm::translate(xOffset, yOffset, 0.0f);
-        inputColor = color;
-        glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
-        glUniform3fv(inputColorLocation, 1, &inputColor[0]);
-    }
-
     void draw() {
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
@@ -107,29 +96,80 @@ struct Entity {
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glDisableVertexAttribArray(0);
     }
-
-    virtual void updatePosition(GLFWwindow* window) = 0;
 };
 
-struct Player : Entity {
+
+
+struct DynamicEntity : Entity {
+
+    enum direction { UP, DOWN, LEFT, RIGHT };
+
+    float xSize = 0.1f;
+    float ySize = 0.1f;
+
+    DynamicEntity(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength) :
+        Entity(entityColor, startingPos,data, dataLength) {}
+
+    void updateUniforms(GLint translationMatrixLocation, GLint inputColorLocation) {
+        transMatrix = glm::translate(xOffset, yOffset, 0.0f);
+        inputColor = color;
+        glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
+        glUniform3fv(inputColorLocation, 1, &inputColor[0]);
+    }
+
+    bool checkCollisions(DynamicEntity* other) {
+        // Collision x-axis?
+        bool collisionX = xOffset + xSize >= other->xOffset &&
+            other->xOffset + other->xSize >= xOffset;
+        // Collision y-axis?
+        bool collisionY = yOffset + ySize >= other->yOffset &&
+            other->yOffset + other->ySize >= yOffset;
+
+        // Collision only if on both axes
+        return collisionX && collisionY;
+    }
+
+    virtual void updatePosition(GLFWwindow* window) = 0;
+    virtual void onCollision(DynamicEntity* other) = 0;
+};
+
+struct Player : DynamicEntity {
+    bool dead = false;
+    int lives = 3;
+    float speed = 0.01f;
+
+    Player(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength) :
+        DynamicEntity(entityColor, startingPos, data, dataLength) {}
+
     void updatePosition(GLFWwindow* window) {
         if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-            yOffset += 0.01f;
+            yOffset += speed;
         }
         if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-            yOffset -= 0.01f;
+            yOffset -= speed;
         }
         if(glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-            xOffset -= 0.01f;
+            xOffset -= speed;
         }
         if(glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-            xOffset += 0.01f;
+            xOffset += speed;
         }
+    }
+
+    void onCollision(DynamicEntity* other) {
+        dead = true;
+        lives--;
+        xOffset = startingPosition.x;
+        yOffset = startingPosition.y;
     }
 };
 
-struct VerticalEnemy : Entity {
+struct VerticalEnemy : DynamicEntity {
     bool movingUp = true;
+    float speed = 0.02f;
+
+    VerticalEnemy(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength) :
+        DynamicEntity(entityColor, startingPos, data, dataLength) {}
 
     void updatePosition(GLFWwindow* window) {
         if(yOffset >= 1.0f && movingUp) {
@@ -139,16 +179,24 @@ struct VerticalEnemy : Entity {
             movingUp = true;
         }
         if(movingUp) {
-            yOffset += 0.02f;
+            yOffset += speed;
         }
         else {
-            yOffset -= 0.02f;
+            yOffset -= speed;
         }
+    }
+
+    void onCollision(DynamicEntity* other) {
+        movingUp = !movingUp;
     }
 };
 
-struct HorizontalEnemy : Entity {
+struct HorizontalEnemy : DynamicEntity {
     bool movingRight = true;
+    float speed = 0.02f;
+
+    HorizontalEnemy(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength) :
+        DynamicEntity(entityColor, startingPos, data, dataLength) {}
 
     void updatePosition(GLFWwindow* window) {
         if(xOffset >= 1.0f && movingRight) {
@@ -158,30 +206,38 @@ struct HorizontalEnemy : Entity {
             movingRight = true;
         }
         if(movingRight) {
-            xOffset += 0.02f;
+            xOffset += speed;
         }
         else {
-            xOffset -= 0.02f;
+            xOffset -= speed;
         }
+    }
+
+    void onCollision(DynamicEntity* other) {
+        movingRight = !movingRight;
     }
 };
 
-
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void checkAllCollisions(DynamicEntity* one, std::vector<DynamicEntity*>& entities);
+GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_path);
+GLfloat* newRectangle();
 
 int main(int argc, char* argv[]) {
     
     Window win;
     win.init();
 
-    std::vector<Entity*> entities;
+    std::vector<DynamicEntity*> entities;
 
-    Player player;
-    VerticalEnemy vertEnemy;
-    HorizontalEnemy horizEnemy;
+    GLuint rectDataSize = 18;
+    GLfloat* playerData = newRectangle();
+    GLfloat* hEnemyData = newRectangle();
+    GLfloat* vEnemyData = newRectangle();
 
-    player.init(glm::vec3(0.0f, 1.0f, 0.0f));
-    vertEnemy.init(glm::vec3(1.0f, 0.0f, 0.0f));
-    horizEnemy.init(glm::vec3(0.0f, 0.0f, 1.0f));
+    Player player(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(-0.9f, 0.05f, 0.0f), playerData, rectDataSize);
+    VerticalEnemy vertEnemy(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(-0.0f, 0.0f, 0.0f), hEnemyData, rectDataSize);
+    HorizontalEnemy horizEnemy(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.5f, -0.5f, 0.0f), vEnemyData, rectDataSize);
 
     entities.push_back(&player);
     entities.push_back(&vertEnemy);
@@ -231,14 +287,19 @@ int main(int argc, char* argv[]) {
         0.7f, -0.95f, 0.0f
     };
 
-    GLushort arenaIndexData[] = {
-        0, 1, 2,  // Top wall
-        1, 2, 3,
-        4, 5, 6,  // Bottom wall
-        5, 6, 7
-    };
-
     glBufferData(GL_ARRAY_BUFFER, sizeof(arenaVertexData), arenaVertexData, GL_STATIC_DRAW);
+
+    //GLushort arenaIndexData[] = {
+    //    0, 1, 2,  // Top wall
+    //    1, 2, 3,
+    //    4, 5, 6,  // Bottom wall
+    //    5, 6, 7
+    //};
+
+    /*GLuint arenaElementBuffer;
+    glGenBuffers(1, &arenaElementBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, arenaElementBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(arenaIndexData), arenaIndexData, GL_STATIC_DRAW);*/
 
     while(!glfwWindowShouldClose(win.win)) {
 
@@ -250,9 +311,10 @@ int main(int argc, char* argv[]) {
 
         // Update enemies and player
         for(auto* entity : entities) {
+            checkAllCollisions(entity, entities);
             entity->updateUniforms(translationMatrixLocation, inputColorLocation);
-            entity->draw();
             entity->updatePosition(win.win);
+            entity->draw();
         }
 
         glm::mat4 transMatrix = glm::translate(0.0f, 0.0f, 0.0f);
@@ -282,6 +344,19 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             }
         default:
             break;
+    }
+}
+
+void checkAllCollisions(DynamicEntity* one, std::vector<DynamicEntity*>& entities) {
+    for(auto* two : entities) {
+        if(&(*one) == &(*two)) {
+            continue;
+        }
+        else {
+            if(one->checkCollisions(two)) {
+                one->onCollision(two);
+            }
+        }
     }
 }
 
@@ -375,3 +450,15 @@ GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_pat
     return ProgramID;
 }
 
+GLfloat* newRectangle() {
+    GLfloat* rect = new GLfloat[18] {
+        -0.1f, 0.1f, 0.0f,
+            0.0f, 0.1f, 0.0f,
+            -0.1f, 0.0f, 0.0f,
+            0.0f, 0.1f, 0.0f,
+            0.0f, 0.0f, 0.0f,
+            -0.1f, 0.0f, 0.0f,
+    };
+
+    return rect;
+}
