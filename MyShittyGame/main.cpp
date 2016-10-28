@@ -20,15 +20,7 @@ struct Window {
     const int windowHeight = WINDOW_HEIGHT;
     GLFWwindow* win;
 
-    ~Window() {
-        glfwTerminate();
-    }
-
-    static void error_callback(int e, const char *d) {
-        printf("Error %d: %s\n", e, d);
-    }
-
-    void init() {
+    Window() {
         glfwSetErrorCallback(error_callback);
 
         if(!glfwInit()) {
@@ -44,6 +36,14 @@ struct Window {
             fprintf(stderr, "Failed to setup GLEW\n");
             exit(1);
         }
+    }
+
+    ~Window() {
+        glfwTerminate();
+    }
+
+    static void error_callback(int e, const char *d) {
+        printf("Error %d: %s\n", e, d);
     }
 };
 
@@ -224,9 +224,8 @@ GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_pat
 GLfloat* newRectangle();
 
 int main(int argc, char* argv[]) {
-    
+
     Window win;
-    win.init();
 
     std::vector<DynamicEntity*> entities;
 
