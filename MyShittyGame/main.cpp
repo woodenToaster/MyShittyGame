@@ -49,9 +49,10 @@ struct Window {
 
 struct Entity {
     GLfloat *vertexData;
-    GLuint size = 18;
+    GLuint size;
     GLuint vertexArrayId;
     GLuint vertexBuffer;
+    GLuint numTriangles;
     float xOffset = 0;
     float yOffset = 0;
     glm::vec3 startingPosition;
@@ -63,12 +64,14 @@ struct Entity {
 
     Entity(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength) :
         color(entityColor),
+        inputColor(entityColor),
         xOffset(startingPos.x),
         yOffset(startingPos.y),
         startingPosition(startingPos),
         vertexData(data),
         size(dataLength) {
 
+        numTriangles = dataLength / 3;
         initVertexArray();
         initBuffer();
     }
@@ -89,11 +92,18 @@ struct Entity {
         glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)* size, vertexData, GL_DYNAMIC_DRAW);
     }
 
+    void updateUniforms(GLint translationMatrixLocation, GLint inputColorLocation) {
+        transMatrix = glm::translate(xOffset, yOffset, 0.0f);
+        inputColor = color;
+        glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
+        glUniform3fv(inputColorLocation, 1, &inputColor[0]);
+    }
+
     void draw() {
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawArrays(GL_TRIANGLES, 0, numTriangles);
         glDisableVertexAttribArray(0);
     }
 };
@@ -109,13 +119,6 @@ struct DynamicEntity : Entity {
 
     DynamicEntity(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength) :
         Entity(entityColor, startingPos,data, dataLength) {}
-
-    void updateUniforms(GLint translationMatrixLocation, GLint inputColorLocation) {
-        transMatrix = glm::translate(xOffset, yOffset, 0.0f);
-        inputColor = color;
-        glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
-        glUniform3fv(inputColorLocation, 1, &inputColor[0]);
-    }
 
     bool checkCollisions(DynamicEntity* other) {
         // Collision x-axis?
@@ -222,6 +225,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 void checkAllCollisions(DynamicEntity* one, std::vector<DynamicEntity*>& entities);
 GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_path);
 GLfloat* newRectangle();
+GLfloat* newArena();
 
 int main(int argc, char* argv[]) {
 
@@ -233,10 +237,12 @@ int main(int argc, char* argv[]) {
     GLfloat* playerData = newRectangle();
     GLfloat* hEnemyData = newRectangle();
     GLfloat* vEnemyData = newRectangle();
+    GLfloat* arenaData = newArena();
 
     Player player(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(-0.9f, 0.05f, 0.0f), playerData, rectDataSize);
     VerticalEnemy vertEnemy(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(-0.0f, 0.0f, 0.0f), hEnemyData, rectDataSize);
     HorizontalEnemy horizEnemy(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.5f, -0.5f, 0.0f), vEnemyData, rectDataSize);
+    Entity arena(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), arenaData, 72);
 
     entities.push_back(&player);
     entities.push_back(&vertEnemy);
@@ -246,59 +252,6 @@ int main(int argc, char* argv[]) {
     GLuint programId = loadShaders("SimpleVertexShader.vert", "SimpleFragmentShader.frag");
     GLint translationMatrixLocation = glGetUniformLocation(programId, "translationMatrix");
     GLint inputColorLocation = glGetUniformLocation(programId, "inputColor");
-
-    // Set up arena
-    GLuint arenaVertexArrayId;
-    glGenVertexArrays(1, &arenaVertexArrayId);
-    glBindVertexArray(arenaVertexArrayId);
-
-    GLuint arenaVertexBuffer;
-    glGenBuffers(1, &arenaVertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, arenaVertexBuffer);
-
-    GLfloat arenaVertexData[] = {
-        -0.75f, 1.0f, 0.0f,
-        -0.75f, 0.95f, 0.0f,
-        0.75f, 1.0f, 0.0f,
-        -0.75f, 0.95f, 0.0f,
-        0.75f, 1.0f, 0.0f,
-        0.75f, 0.95f, 0.0f,
-
-        -0.75f, -1.0f, 0.0f,
-        -0.75f, -0.95f, 0.0f,
-        0.75f, -1.0f, 0.0f,
-        -0.75f, -0.95f, 0.0f,
-        0.75f, -0.95f, 0.0f,
-        0.75f, -1.0f, 0.0f,
-
-        -0.75f, 0.95f, 0.0f,
-        -0.75f, -0.95f, 0.0f,
-        -0.7f, -0.95f, 0.0f,
-        -0.75f, 0.95f, 0.0f,
-        -0.7f, 0.95f, 0.0f,
-        -0.7f, -0.95f, 0.0f,
-
-        0.75f, 0.95f, 0.0f,
-        0.75f, -0.95f, 0.0f,
-        0.7f, -0.95f, 0.0f,
-        0.7f, 0.95f, 0.0f,
-        0.75f, 0.95f, 0.0f,
-        0.7f, -0.95f, 0.0f
-    };
-
-    glBufferData(GL_ARRAY_BUFFER, sizeof(arenaVertexData), arenaVertexData, GL_STATIC_DRAW);
-
-    //GLushort arenaIndexData[] = {
-    //    0, 1, 2,  // Top wall
-    //    1, 2, 3,
-    //    4, 5, 6,  // Bottom wall
-    //    5, 6, 7
-    //};
-
-    /*GLuint arenaElementBuffer;
-    glGenBuffers(1, &arenaElementBuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, arenaElementBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(arenaIndexData), arenaIndexData, GL_STATIC_DRAW);*/
 
     while(!glfwWindowShouldClose(win.win)) {
 
@@ -316,16 +269,8 @@ int main(int argc, char* argv[]) {
             entity->draw();
         }
 
-        glm::mat4 transMatrix = glm::translate(0.0f, 0.0f, 0.0f);
-        glm::vec4 inputColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-        glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
-        glUniform3fv(inputColorLocation, 1, &inputColor[0]);
-
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, arenaVertexBuffer);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        glDrawArrays(GL_TRIANGLES, 0, 24);
-        glDisableVertexAttribArray(0);
+        arena.updateUniforms(translationMatrixLocation, inputColorLocation);
+        arena.draw();
 
         glfwPollEvents();
         glfwSwapBuffers(win.win);
@@ -460,4 +405,38 @@ GLfloat* newRectangle() {
     };
 
     return rect;
+}
+
+GLfloat* newArena() {
+    GLfloat* arenaVertexData = new GLfloat[72] {
+        -0.75f, 1.0f, 0.0f,
+        -0.75f, 0.95f, 0.0f,
+        0.75f, 1.0f, 0.0f,
+        -0.75f, 0.95f, 0.0f,
+        0.75f, 1.0f, 0.0f,
+        0.75f, 0.95f, 0.0f,
+
+        -0.75f, -1.0f, 0.0f,
+        -0.75f, -0.95f, 0.0f,
+        0.75f, -1.0f, 0.0f,
+        -0.75f, -0.95f, 0.0f,
+        0.75f, -0.95f, 0.0f,
+        0.75f, -1.0f, 0.0f,
+
+        -0.75f, 0.95f, 0.0f,
+        -0.75f, -0.95f, 0.0f,
+        -0.7f, -0.95f, 0.0f,
+        -0.75f, 0.95f, 0.0f,
+        -0.7f, 0.95f, 0.0f,
+        -0.7f, -0.95f, 0.0f,
+
+        0.75f, 0.95f, 0.0f,
+        0.75f, -0.95f, 0.0f,
+        0.7f, -0.95f, 0.0f,
+        0.7f, 0.95f, 0.0f,
+        0.75f, 0.95f, 0.0f,
+        0.7f, -0.95f, 0.0f
+    };
+
+    return arenaVertexData;
 }
