@@ -12,6 +12,11 @@
 
 #define WINDOW_WIDTH 1200
 #define WINDOW_HEIGHT 800
+#define ARENA_VERTS 90
+#define RECT_VERTS 18
+#define DYNAMIC_ENTITY_X_SIZE 0.1f
+#define DYMAMIC_ENTITY_Y_SIZE 0.1f
+#define ENEMY_SPEED 0.02f
 
 struct Window {
     int width;
@@ -47,29 +52,46 @@ struct Window {
     }
 };
 
+struct Point {
+    float x;
+    float y;
+};
+Point glToScreenCoordinates(float glX, float glY);
+
 struct Entity {
     GLfloat *vertexData;
     GLuint size;
     GLuint vertexArrayId;
     GLuint vertexBuffer;
     GLuint numTriangles;
-    float xOffset = 0;
-    float yOffset = 0;
+    float xOffset;
+    float yOffset;
+    float xSize;
+    float ySize;
+    float x;
+    float y;
+    float coordinateXsize;
+    float coordinateYsize;
+    Point screenCoordinates;
     glm::vec3 startingPosition;
     glm::vec3 color;
     glm::mat4 transMatrix;
     glm::vec3 inputColor;
 
-    enum direction {UP, DOWN, LEFT, RIGHT};
-
-    Entity(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength) :
+    Entity(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength, float xLength, float yLength) :
         color(entityColor),
         inputColor(entityColor),
         xOffset(startingPos.x),
         yOffset(startingPos.y),
+        x(startingPos.x),
+        y(startingPos.y),
         startingPosition(startingPos),
         vertexData(data),
-        size(dataLength) {
+        size(dataLength),
+        xSize(xLength),
+        ySize(yLength),
+        coordinateXsize((xSize * WINDOW_WIDTH) / 2),
+        coordinateYsize((ySize * WINDOW_HEIGHT) / 2) {
 
         numTriangles = dataLength / 3;
         initVertexArray();
@@ -92,7 +114,21 @@ struct Entity {
         glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)* size, vertexData, GL_DYNAMIC_DRAW);
     }
 
-    void updateUniforms(GLint translationMatrixLocation, GLint inputColorLocation) {
+    void setStaticPosition(GLint translationMatrixLocation, GLint inputColorLocation, glm::vec3* pos) {
+        x = pos->x;
+        y = pos->y;
+        transMatrix = glm::translate(0.0f, 0.0f, 0.0f);
+        inputColor = color;
+        glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
+        glUniform3fv(inputColorLocation, 1, &inputColor[0]);
+    }
+
+    void updateUniforms(GLint translationMatrixLocation, GLint inputColorLocation, glm::vec3* translate = NULL) {
+        if(translate) {
+            xOffset = translate->x;
+            yOffset = translate->y;
+        }
+        screenCoordinates = glToScreenCoordinates(xOffset, yOffset);
         transMatrix = glm::translate(xOffset, yOffset, 0.0f);
         inputColor = color;
         glUniformMatrix4fv(translationMatrixLocation, 1, GL_FALSE, &transMatrix[0][0]);
@@ -108,19 +144,14 @@ struct Entity {
     }
 };
 
-
-
 struct DynamicEntity : Entity {
 
     enum direction { UP, DOWN, LEFT, RIGHT };
 
-    float xSize = 0.1f;
-    float ySize = 0.1f;
+    DynamicEntity(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength, float xLength, float yLength) :
+        Entity(entityColor, startingPos,data, dataLength, xLength, yLength) {}
 
-    DynamicEntity(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength) :
-        Entity(entityColor, startingPos,data, dataLength) {}
-
-    bool checkCollisions(DynamicEntity* other) {
+    bool checkCollisions(Entity* other) {
         // Collision x-axis?
         bool collisionX = xOffset + xSize >= other->xOffset &&
             other->xOffset + other->xSize >= xOffset;
@@ -132,8 +163,20 @@ struct DynamicEntity : Entity {
         return collisionX && collisionY;
     }
 
+    bool checkArenaCollisions(Entity* other) {
+        // Collision x-axis?
+        bool collisionX = xOffset + xSize >= other->x &&
+            other->x + other->xSize >= xOffset;
+        // Collision y-axis?
+        bool collisionY = abs(yOffset) + ySize >= other->y &&
+            other->y + other->ySize >= yOffset;
+
+        // Collision only if on both axes
+        return collisionX && collisionY;
+    }
+
     virtual void updatePosition(GLFWwindow* window) = 0;
-    virtual void onCollision(DynamicEntity* other) = 0;
+    virtual void onCollision(Entity* other) = 0;
 };
 
 struct Player : DynamicEntity {
@@ -142,24 +185,32 @@ struct Player : DynamicEntity {
     float speed = 0.01f;
 
     Player(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength) :
-        DynamicEntity(entityColor, startingPos, data, dataLength) {}
+        DynamicEntity(entityColor, startingPos, data, dataLength, DYNAMIC_ENTITY_X_SIZE, DYMAMIC_ENTITY_Y_SIZE) {}
 
     void updatePosition(GLFWwindow* window) {
         if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-            yOffset += speed;
+            if(screenCoordinates.y >= 0) {
+                yOffset += speed;
+            }
         }
         if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-            yOffset -= speed;
+            if(screenCoordinates.y + coordinateYsize <= WINDOW_HEIGHT) {
+                yOffset -= speed;
+            }
         }
         if(glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-            xOffset -= speed;
+            if(screenCoordinates.x >= 0) {
+                xOffset -= speed;
+            }
         }
         if(glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-            xOffset += speed;
+            if(screenCoordinates.x + coordinateXsize <= WINDOW_WIDTH) {
+                xOffset += speed;
+            }
         }
     }
 
-    void onCollision(DynamicEntity* other) {
+    void onCollision(Entity* other) {
         dead = true;
         lives--;
         xOffset = startingPosition.x;
@@ -169,10 +220,10 @@ struct Player : DynamicEntity {
 
 struct VerticalEnemy : DynamicEntity {
     bool movingUp = true;
-    float speed = 0.02f;
+    float speed = ENEMY_SPEED;
 
-    VerticalEnemy(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength) :
-        DynamicEntity(entityColor, startingPos, data, dataLength) {}
+    VerticalEnemy(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength, float xLength, float yLength) :
+        DynamicEntity(entityColor, startingPos, data, dataLength, xLength, yLength) {}
 
     void updatePosition(GLFWwindow* window) {
         if(yOffset >= 1.0f && movingUp) {
@@ -189,17 +240,17 @@ struct VerticalEnemy : DynamicEntity {
         }
     }
 
-    void onCollision(DynamicEntity* other) {
+    void onCollision(Entity* other) {
         movingUp = !movingUp;
     }
 };
 
 struct HorizontalEnemy : DynamicEntity {
     bool movingRight = true;
-    float speed = 0.02f;
+    float speed = ENEMY_SPEED;
 
-    HorizontalEnemy(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength) :
-        DynamicEntity(entityColor, startingPos, data, dataLength) {}
+    HorizontalEnemy(glm::vec3 entityColor, glm::vec3 startingPos, float* data, GLuint dataLength, float xLength, float yLength) :
+        DynamicEntity(entityColor, startingPos, data, dataLength, xLength, yLength) {}
 
     void updatePosition(GLFWwindow* window) {
         if(xOffset >= 1.0f && movingRight) {
@@ -216,15 +267,22 @@ struct HorizontalEnemy : DynamicEntity {
         }
     }
 
-    void onCollision(DynamicEntity* other) {
+    void onCollision(Entity* other) {
         movingRight = !movingRight;
     }
 };
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void cursorPosCallback(GLFWwindow* window, double x, double y);
+
 void checkAllCollisions(DynamicEntity* one, std::vector<DynamicEntity*>& entities);
+void checkArenaCollisions(DynamicEntity* de, std::vector<Entity*> walls);
 GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_path);
 GLfloat* newRectangle();
+GLfloat* newVerticalArenaBar();
+GLfloat* newHorizontalArenaBarTop();
+GLfloat* newHorizaontalArenaBarBottom();
+GLfloat* newHorizontalArenaBarShort();
 GLfloat* newArena();
 
 int main(int argc, char* argv[]) {
@@ -232,26 +290,40 @@ int main(int argc, char* argv[]) {
     Window win;
 
     std::vector<DynamicEntity*> entities;
+    std::vector<Entity*> arenaWalls;
 
-    GLuint rectDataSize = 18;
     GLfloat* playerData = newRectangle();
     GLfloat* hEnemyData = newRectangle();
     GLfloat* vEnemyData = newRectangle();
-    GLfloat* arenaData = newArena();
+    
+    GLfloat* arenaTopData = newHorizontalArenaBarTop();
+    GLfloat* arenaRightData = newVerticalArenaBar();
+    GLfloat* arenaBottomData = newHorizaontalArenaBarBottom();
 
-    Player player(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(-0.9f, 0.05f, 0.0f), playerData, rectDataSize);
-    VerticalEnemy vertEnemy(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(-0.0f, 0.0f, 0.0f), hEnemyData, rectDataSize);
-    HorizontalEnemy horizEnemy(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.5f, -0.5f, 0.0f), vEnemyData, rectDataSize);
-    Entity arena(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), arenaData, 72);
+    Player player(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(-0.9f, 0.05f, 0.0f), playerData, RECT_VERTS);
+    VerticalEnemy vertEnemy(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(-0.0f, 0.0f, 0.0f), hEnemyData, RECT_VERTS, DYNAMIC_ENTITY_X_SIZE, DYMAMIC_ENTITY_Y_SIZE);
+    HorizontalEnemy horizEnemy(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.5f, -0.5f, 0.0f), vEnemyData, RECT_VERTS, DYNAMIC_ENTITY_X_SIZE, DYMAMIC_ENTITY_Y_SIZE);
+
+    Entity arenaTop(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), arenaTopData, RECT_VERTS, 1.5f, 0.1f);
+    Entity arenaBottom(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), arenaBottomData, RECT_VERTS, 1.5f, 0.1f);
+    Entity arenaRight(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), arenaRightData, RECT_VERTS, 0.05f, 2.0f);
+
+    arenaWalls.push_back(&arenaTop);
+    arenaWalls.push_back(&arenaBottom);
+    arenaWalls.push_back(&arenaRight);
 
     entities.push_back(&player);
     entities.push_back(&vertEnemy);
     entities.push_back(&horizEnemy);
 
     glfwSetKeyCallback(win.win, keyCallback);
+    glfwSetCursorPosCallback(win.win, cursorPosCallback);
+
     GLuint programId = loadShaders("SimpleVertexShader.vert", "SimpleFragmentShader.frag");
     GLint translationMatrixLocation = glGetUniformLocation(programId, "translationMatrix");
     GLint inputColorLocation = glGetUniformLocation(programId, "inputColor");
+
+    //arenaTop.setStaticPosition(translationMatrixLocation, inputColorLocation, &glm::vec3(-0.75f, 1.0f, 0.0f));
 
     while(!glfwWindowShouldClose(win.win)) {
 
@@ -264,13 +336,34 @@ int main(int argc, char* argv[]) {
         // Update enemies and player
         for(auto* entity : entities) {
             checkAllCollisions(entity, entities);
+            checkArenaCollisions(entity, arenaWalls);
             entity->updateUniforms(translationMatrixLocation, inputColorLocation);
             entity->updatePosition(win.win);
             entity->draw();
         }
 
-        arena.updateUniforms(translationMatrixLocation, inputColorLocation);
-        arena.draw();
+        arenaTop.setStaticPosition(translationMatrixLocation, inputColorLocation, &glm::vec3(-0.75f, 1.0f, 0.0f));
+        arenaTop.updateUniforms(translationMatrixLocation, inputColorLocation);
+        arenaTop.draw();
+
+        arenaBottom.setStaticPosition(translationMatrixLocation, inputColorLocation, &glm::vec3(-0.75f, -1.0f, 0.0f));
+        arenaBottom.updateUniforms(translationMatrixLocation, inputColorLocation);
+        arenaBottom.draw();
+
+        Point screenCoordinates = glToScreenCoordinates(arenaTop.x, arenaTop.y);
+        /*std::cout << "Top.x: " << screenCoordinates.x << std::endl;
+        std::cout << "Top.y: " << screenCoordinates.y << std::endl;
+        screenCoordinates = glToScreenCoordinates(arenaRight.x, arenaRight.y);
+        std::cout << "Right.x: " << screenCoordinates.x << std::endl;
+        std::cout << "Right.y: " << screenCoordinates.y << std::endl;*/
+        
+        screenCoordinates = glToScreenCoordinates(player.xOffset, player.yOffset);
+        std::cout << "x: " << screenCoordinates.x << std::endl;
+        std::cout << "y: " << screenCoordinates.y << std::endl;
+
+        arenaRight.setStaticPosition(translationMatrixLocation, inputColorLocation, &glm::vec3(0.7f, 0.95f, 0.0f));
+        arenaRight.updateUniforms(translationMatrixLocation, inputColorLocation);
+        arenaRight.draw();
 
         glfwPollEvents();
         glfwSwapBuffers(win.win);
@@ -291,6 +384,30 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     }
 }
 
+Point glToScreenCoordinates(float glX, float glY) {
+    Point screenPoint;
+
+    if(glX <= 0) {
+        screenPoint.x = ((1 - abs(glX)) * WINDOW_WIDTH) / 2;
+    }
+    else if(glX > 0) {
+        screenPoint.x = ((glX + 1) * WINDOW_WIDTH) / 2;
+    }
+
+    if(glY < 0) {
+        screenPoint.y = ((1 - glY) * WINDOW_HEIGHT) / 2;
+    }
+    else if(glY >= 0) {
+        screenPoint.y = (WINDOW_HEIGHT * (1 - glY)) / 2;
+    }
+
+    return screenPoint;
+}
+
+void cursorPosCallback(GLFWwindow* window, double x, double y) {
+    std::cout << "Mouse " << x << ", " << y << std::endl;
+}
+
 void checkAllCollisions(DynamicEntity* one, std::vector<DynamicEntity*>& entities) {
     for(auto* two : entities) {
         if(&(*one) == &(*two)) {
@@ -300,6 +417,14 @@ void checkAllCollisions(DynamicEntity* one, std::vector<DynamicEntity*>& entitie
             if(one->checkCollisions(two)) {
                 one->onCollision(two);
             }
+        }
+    }
+}
+
+void checkArenaCollisions(DynamicEntity* de, std::vector<Entity*> walls) {
+    for(auto* wall : walls) {
+        if(de->checkArenaCollisions(wall)) {
+            de->onCollision(wall);
         }
     }
 }
@@ -396,41 +521,96 @@ GLuint loadShaders(const char * vertex_file_path, const char * fragment_file_pat
 
 GLfloat* newRectangle() {
     GLfloat* rect = new GLfloat[18] {
-        -0.1f, 0.1f, 0.0f,
-            0.0f, 0.1f, 0.0f,
-            -0.1f, 0.0f, 0.0f,
-            0.0f, 0.1f, 0.0f,
-            0.0f, 0.0f, 0.0f,
-            -0.1f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f,
+        0.0f, -0.1f, 0.0f,
+        0.1f, 0.0f, 0.0f,
+        0.1f, 0.0f, 0.0f,
+        0.1f, -0.1f, 0.0f,
+        0.0f, -0.1f, 0.0f,
     };
 
     return rect;
 }
 
-GLfloat* newArena() {
-    GLfloat* arenaVertexData = new GLfloat[72] {
+GLfloat* newVerticalArenaBar() {
+    GLfloat* data = new GLfloat[RECT_VERTS] {
+        0.75f, 0.95f, 0.0f,
+        0.75f, -0.95f, 0.0f,
+        0.7f, -0.95f, 0.0f,
+        0.7f, 0.95f, 0.0f,
+        0.75f, 0.95f, 0.0f,
+        0.7f, -0.95f, 0.0f
+    };
+    return data;
+}
+
+GLfloat* newHorizontalArenaBarTop() {
+    GLfloat* data = new GLfloat[RECT_VERTS] {
         -0.75f, 1.0f, 0.0f,
+        -0.75f, 0.95f, 0.0f,
+        0.75f, 1.0f, 0.0f,
+        -0.75f, 0.95f, 0.0f,
+        0.75f, 1.0f, 0.0f,
+        0.75f, 0.95f, 0.0f
+    };
+    return data;
+}
+
+GLfloat* newHorizaontalArenaBarBottom() {
+    GLfloat* data = new GLfloat[RECT_VERTS] {
+        -0.75f, -1.0f, 0.0f,
+        -0.75f, -0.95f, 0.0f,
+        0.75f, -1.0f, 0.0f,
+        -0.75f, -0.95f, 0.0f,
+        0.75f, -0.95f, 0.0f,
+        0.75f, -1.0f, 0.0f
+    };
+    return data;
+}
+
+GLfloat* newVerticalArenaBarShort() {
+    GLfloat* data = new GLfloat[RECT_VERTS] {
+        -0.75f, 0.95f, 0.0f,
+        -0.75f, 0.3f, 0.0f,
+        -0.7f, 0.95f, 0.0f,
+        -0.75f, 0.3f, 0.0f,
+        -0.7f, 0.3f, 0.0f,
+        -0.7f, 0.95f, 0.0f,
+    };
+    return data;
+}
+
+GLfloat* newArena() {
+    GLfloat* arenaVertexData = new GLfloat[ARENA_VERTS] {
+        -0.75f, 1.0f, 0.0f, // Top
         -0.75f, 0.95f, 0.0f,
         0.75f, 1.0f, 0.0f,
         -0.75f, 0.95f, 0.0f,
         0.75f, 1.0f, 0.0f,
         0.75f, 0.95f, 0.0f,
 
-        -0.75f, -1.0f, 0.0f,
+        -0.75f, -1.0f, 0.0f, // Bottom
         -0.75f, -0.95f, 0.0f,
         0.75f, -1.0f, 0.0f,
         -0.75f, -0.95f, 0.0f,
         0.75f, -0.95f, 0.0f,
         0.75f, -1.0f, 0.0f,
 
-        -0.75f, 0.95f, 0.0f,
-        -0.75f, -0.95f, 0.0f,
-        -0.7f, -0.95f, 0.0f,
-        -0.75f, 0.95f, 0.0f,
+        -0.75f, 0.95f, 0.0f, // Left top 
+        -0.75f, 0.3f, 0.0f,
         -0.7f, 0.95f, 0.0f,
+        -0.75f, 0.3f, 0.0f,
+        -0.7f, 0.3f, 0.0f,
+        -0.7f, 0.95f, 0.0f,
+
+        -0.75f, -0.95f, 0.0f, // Left bottom
+        -0.75f, -0.3f, 0.0f,
+        -0.7f, -0.95f, 0.0f,
+        -0.75f, -0.3f, 0.0f,
+        -0.7f, -0.3f, 0.0f,
         -0.7f, -0.95f, 0.0f,
 
-        0.75f, 0.95f, 0.0f,
+        0.75f, 0.95f, 0.0f, // Right
         0.75f, -0.95f, 0.0f,
         0.7f, -0.95f, 0.0f,
         0.7f, 0.95f, 0.0f,
