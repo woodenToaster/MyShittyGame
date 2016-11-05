@@ -50,11 +50,12 @@ void GameLevel::draw(EntityRenderer &renderer)
 
 void GameLevel::init() {
     // TODO: Get this data from a file (JSON?)
-    Entity top(glm::vec2(150, 0), glm::vec2(900, 20));
-    Entity bottom(glm::vec2(150, 780), glm::vec2(900, 20));
-    Entity right(glm::vec2(1030, 20), glm::vec2(20, 860));
-    Entity leftTop(glm::vec2(150, 20), glm::vec2(20, 253));
-    Entity leftBottom(glm::vec2(150, 526), glm::vec2(20, 254));
+    glm::vec3 white = glm::vec3(1.0f, 1.0f, 1.0f);
+    Entity top(glm::vec2(150, 0), glm::vec2(900, 20), white);
+    Entity bottom(glm::vec2(150, 780), glm::vec2(900, 20), white);
+    Entity right(glm::vec2(1030, 20), glm::vec2(20, 860), white);
+    Entity leftTop(glm::vec2(150, 20), glm::vec2(20, 253), white);
+    Entity leftBottom(glm::vec2(150, 526), glm::vec2(20, 254), white);
     
     top.isSolid = true;
     bottom.isSolid = true;

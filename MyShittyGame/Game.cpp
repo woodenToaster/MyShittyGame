@@ -36,10 +36,8 @@ void Game::init() {
     GameLevel levelOne;
     levelOne.init();
 
-    Enemy horizontalEnemy(glm::vec2(400, 600), ENTITY_SIZE, Enemy::HORIZONTAL);
-    horizontalEnemy.color = glm::vec3(0.0f, 0.0f, 1.0f);
-    Enemy verticalEnemy(glm::vec2(800, 400), ENTITY_SIZE, Enemy::VERTICAL);
-    verticalEnemy.color = glm::vec3(1.0f, 0.0f, 0.0f);
+    Enemy horizontalEnemy(glm::vec2(400, 600), ENTITY_SIZE, glm::vec3(0.0f, 0.0f, 1.0f), Enemy::HORIZONTAL);
+    Enemy verticalEnemy(glm::vec2(800, 400), ENTITY_SIZE, glm::vec3(1.0f, 0.0f, 0.0f), Enemy::VERTICAL);
 
     levelOne.enemies.push_back(horizontalEnemy);
     levelOne.enemies.push_back(verticalEnemy);
@@ -53,8 +51,40 @@ void Game::updateEnemies(GLfloat dt) {
     }
 }
 
+void Game::checkCollisions() {
+
+    // Check player collisions with enemies
+    for(Enemy& enemy : levels[level].enemies) {
+        if(player->checkCollision(enemy)) {
+            player->onCollision(enemy);
+        }
+    }
+
+    // Check enemy collisions
+    for(Enemy& enemy : levels[level].enemies) {
+
+        // With other enemies
+        for(Enemy& otherEnemy : levels[level].enemies) {
+            if(&otherEnemy == &enemy) {
+                continue;
+            }
+            if(enemy.checkCollision(otherEnemy)) {
+                enemy.onCollision(otherEnemy);
+            }
+        }
+
+        // With arena walls
+        for(Entity& wall : levels[level].arena) {
+            if(enemy.checkCollision(wall)) {
+                enemy.onCollision(wall);
+            }
+        }
+    }
+}
+
 void Game::update(GLfloat dt) {
     updateEnemies(dt);
+    checkCollisions();
 }
 
 
@@ -62,16 +92,16 @@ void Game::processInput(GLfloat dt) {
     if(state == GAME_ACTIVE)
     {
         if(keys[GLFW_KEY_LEFT]) {
-            player->moveLeft(dt);
+            player->moveLeft(dt, levels[level].arena);
         }
         if(keys[GLFW_KEY_RIGHT]) {
-            player->moveRight(dt, width);
+            player->moveRight(dt, width, levels[level].arena);
         }
         if(keys[GLFW_KEY_UP]) {
-            player->moveUp(dt);
+            player->moveUp(dt, levels[level].arena);
         }
         if(keys[GLFW_KEY_DOWN]) {
-            player->moveDown(dt, height);
+            player->moveDown(dt, height, levels[level].arena);
         }
     }
 }

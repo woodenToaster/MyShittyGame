@@ -14,8 +14,9 @@ public:
     bool movingUp;
     GLfloat velocity;
 
-    Enemy(glm::vec2 enemyPosition, glm::vec2 enemySize, Direction dir);
+    Enemy(glm::vec2 enemyPosition, glm::vec2 enemySize, glm::vec3 color, Direction dir);
     void update(GLfloat dt, GLuint width, GLuint height);
+    void onCollision(Entity& other);
 
 private:
 

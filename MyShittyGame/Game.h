@@ -38,6 +38,7 @@ public:
     void updateEnemies(GLfloat dt);
     void update(GLfloat dt);
     void render();
+    void checkCollisions();
 };
 
 #endif

@@ -43,21 +43,18 @@ int main(int argc, char *argv[])
         lastFrame = currentFrame;
         glfwPollEvents();
 
-        //deltaTime = 0.001f;
         MyShittyGame.processInput(deltaTime);
-
         MyShittyGame.update(deltaTime);
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         MyShittyGame.render();
-
         glfwSwapBuffers(window);
     }
 
     ResourceManager::clear();
-
     glfwTerminate();
+
     return 0;
 }
 

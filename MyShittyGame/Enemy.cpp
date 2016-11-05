@@ -1,7 +1,7 @@
 #include "Enemy.h"
 
-Enemy::Enemy(glm::vec2 enemyPosition, glm::vec2 enemySize, Direction dir) : direction(dir), velocity(400.0f),
-    Entity(enemyPosition, enemySize) {
+Enemy::Enemy(glm::vec2 enemyPosition, glm::vec2 enemySize, glm::vec3 color, Direction dir) : direction(dir), velocity(500.0f),
+    Entity(enemyPosition, enemySize, color, ENEMY) {
 }
 
 void Enemy::update(float dt, GLuint width, GLuint height) {
@@ -10,22 +10,29 @@ void Enemy::update(float dt, GLuint width, GLuint height) {
         case HORIZONTAL:
             if(position.x >= 0 && !movingRight)
                 position.x -= velocityDelta;
-            if(position.x <= width - size.x && movingRight)
+            if(position.x <= width - size.x)
                 position.x += velocityDelta;
 
             if(position.x <= 0 || position.x + size.x >= width) {
+                velocity = -velocity;
                 movingRight = !movingRight;
             }
             break;
         case VERTICAL:
-            if(position.y >= 0 && movingUp)
+            if(position.y >= 0 && !movingUp)
                 position.y -= velocityDelta;
-            if(position.y <= height - size.y && !movingUp)
+            if(position.y <= height - size.y)
                 position.y += velocityDelta;
 
             if(position.y <= 0 || position.y + size.y >= height) {
-                movingUp = !movingUp;
+                velocity = -velocity;
+                movingUp = !movingUp;;
             }
             break;
     }
+}
+
+void Enemy::onCollision(Entity& other) {
+    velocity = -velocity;
+
 }
