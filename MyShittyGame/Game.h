@@ -38,6 +38,8 @@ public:
     void processInput(GLfloat dt);
     void updateEnemies(GLfloat dt);
     void closeDoor();
+    void openDoor();
+    void closeExit();
     void openExit();
     void checkDoor();
     void update(GLfloat dt);

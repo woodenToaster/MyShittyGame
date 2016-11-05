@@ -58,6 +58,8 @@ void Game::checkCollisions() {
     for(Enemy& enemy : levels[level].enemies) {
         if(player->checkCollision(enemy)) {
             player->onCollision(enemy);
+            openDoor();
+            closeExit();
         }
     }
 
@@ -89,6 +91,16 @@ void Game::closeDoor() {
     Entity door(doorPos, doorSize, glm::vec3(1.0f, 1.0f, 1.0f));
     levels[level].arena.push_back(door);
     doorOpen = false;
+}
+
+void Game::openDoor() {
+    levels[level].arena.pop_back();
+    doorOpen = true;
+}
+
+void Game::closeExit() {
+    Entity exit(levels[level].exitPosition, levels[level].exitSize, glm::vec3(1.0f, 1.0f, 1.0f));
+    levels[level].arena.insert(levels[level].arena.begin(), exit);
 }
 
 void Game::openExit() {

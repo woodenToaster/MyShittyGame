@@ -61,9 +61,9 @@ void GameLevel::init() {
     doorPosition = glm::vec2(150, 273);
     doorSize = glm::vec2(20, 253);
 
-    exitPostion = glm::vec2(1030, 150);
+    exitPosition = glm::vec2(1030, 150);
     exitSize = glm::vec2(20, 50);
-    Entity exit(exitPostion, exitSize, white);
+    Entity exit(exitPosition, exitSize, white);
 
     top.isSolid = true;
     bottom.isSolid = true;
