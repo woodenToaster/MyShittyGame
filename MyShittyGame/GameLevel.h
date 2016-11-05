@@ -15,6 +15,10 @@ class GameLevel
 public:
     std::vector<Entity> arena;
     std::vector<Enemy> enemies;
+    glm::vec2 doorPosition;
+    glm::vec2 doorSize;
+    glm::vec2 exitPostion;
+    glm::vec2 exitSize;
 
     GameLevel() {}
 

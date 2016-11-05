@@ -53,19 +53,30 @@ void GameLevel::init() {
     glm::vec3 white = glm::vec3(1.0f, 1.0f, 1.0f);
     Entity top(glm::vec2(150, 0), glm::vec2(900, 20), white);
     Entity bottom(glm::vec2(150, 780), glm::vec2(900, 20), white);
-    Entity right(glm::vec2(1030, 20), glm::vec2(20, 860), white);
+    Entity rightTop(glm::vec2(1030, 20), glm::vec2(20, 130), white);
+    Entity rightBottom(glm::vec2(1030, 200), glm::vec2(20, 580), white);
     Entity leftTop(glm::vec2(150, 20), glm::vec2(20, 253), white);
     Entity leftBottom(glm::vec2(150, 526), glm::vec2(20, 254), white);
-    
+
+    doorPosition = glm::vec2(150, 273);
+    doorSize = glm::vec2(20, 253);
+
+    exitPostion = glm::vec2(1030, 150);
+    exitSize = glm::vec2(20, 50);
+    Entity exit(exitPostion, exitSize, white);
+
     top.isSolid = true;
     bottom.isSolid = true;
-    right.isSolid = true;
+    rightTop.isSolid = true;
+    rightBottom.isSolid = true;
     leftTop.isSolid = true;
     leftBottom.isSolid = true;
 
+    arena.push_back(exit);
     arena.push_back(top);
     arena.push_back(bottom);
-    arena.push_back(right);
+    arena.push_back(rightTop);
+    arena.push_back(rightBottom);
     arena.push_back(leftTop);
     arena.push_back(leftBottom);
 }

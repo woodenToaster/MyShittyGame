@@ -24,11 +24,12 @@ class Game
 public:
     GameState state;
     bool keys[1024];
+    bool doorOpen;
     GLuint width;
     GLuint height;
     std::vector<GameLevel> levels;
     GLuint level;
-   
+
     Game(GLuint width, GLuint height);
     ~Game();
 
@@ -36,6 +37,9 @@ public:
 
     void processInput(GLfloat dt);
     void updateEnemies(GLfloat dt);
+    void closeDoor();
+    void openExit();
+    void checkDoor();
     void update(GLfloat dt);
     void render();
     void checkCollisions();

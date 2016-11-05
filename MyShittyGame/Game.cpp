@@ -11,6 +11,7 @@ Player *player;
 Game::Game(GLuint width, GLuint height) :
     state(GAME_ACTIVE),
     keys(),
+    doorOpen(true),
     width(width),
     height(height) {
 
@@ -82,9 +83,31 @@ void Game::checkCollisions() {
     }
 }
 
+void Game::closeDoor() {
+    glm::vec2 doorPos = levels[level].doorPosition;
+    glm::vec2 doorSize = levels[level].doorSize;
+    Entity door(doorPos, doorSize, glm::vec3(1.0f, 1.0f, 1.0f));
+    levels[level].arena.push_back(door);
+    doorOpen = false;
+}
+
+void Game::openExit() {
+    levels[level].arena.erase(levels[level].arena.begin());
+}
+
+void Game::checkDoor() {
+    if(player->position.x > levels[level].doorPosition.x + levels[level].doorSize.x) {
+        closeDoor();
+        openExit();
+    }
+}
+
 void Game::update(GLfloat dt) {
     updateEnemies(dt);
     checkCollisions();
+    if(doorOpen) {
+        checkDoor();
+    }
 }
 
 
