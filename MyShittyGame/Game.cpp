@@ -1,10 +1,12 @@
 #include "Game.h"
 #include "ResourceManager.h"
 #include "EntityRenderer.h"
-#include "Entity.h"
+#include "Player.h"
+
+#define ENTITY_SIZE glm::vec2(40, 40)
 
 EntityRenderer *renderer;
-Entity *player;
+Player *player;
 
 Game::Game(GLuint width, GLuint height) :
     state(GAME_ACTIVE),
@@ -29,13 +31,16 @@ void Game::init() {
     renderer = new EntityRenderer(ResourceManager::getShader("sprite"));
 
     glm::vec2 playerPos = glm::vec2(0.0f, 400.0f);
-    player = new Entity(playerPos, PLAYER_SIZE);
+    player = new Player(playerPos, ENTITY_SIZE);
 
     GameLevel levelOne;
-    Enemy horizontalEnemy(glm::vec2(400, 600), ENEMY_SIZE, Enemy::HORIZONTAL);
+    levelOne.init();
+
+    Enemy horizontalEnemy(glm::vec2(400, 600), ENTITY_SIZE, Enemy::HORIZONTAL);
     horizontalEnemy.color = glm::vec3(0.0f, 0.0f, 1.0f);
-    Enemy verticalEnemy(glm::vec2(800, 400), ENEMY_SIZE, Enemy::VERTICAL);
+    Enemy verticalEnemy(glm::vec2(800, 400), ENTITY_SIZE, Enemy::VERTICAL);
     verticalEnemy.color = glm::vec3(1.0f, 0.0f, 0.0f);
+
     levelOne.enemies.push_back(horizontalEnemy);
     levelOne.enemies.push_back(verticalEnemy);
     levels.push_back(levelOne);
@@ -56,41 +61,24 @@ void Game::update(GLfloat dt) {
 void Game::processInput(GLfloat dt) {
     if(state == GAME_ACTIVE)
     {
-        GLfloat velocity = PLAYER_VELOCITY * dt;
         if(keys[GLFW_KEY_LEFT]) {
-            if(player->position.x >= 0)
-                player->position.x -= velocity;
+            player->moveLeft(dt);
         }
         if(keys[GLFW_KEY_RIGHT]) {
-            if(player->position.x <= width - player->size.x)
-                player->position.x += velocity;
+            player->moveRight(dt, width);
         }
         if(keys[GLFW_KEY_UP]) {
-            if(player->position.y >= 0) {
-                player->position.y -= velocity;
-            }
+            player->moveUp(dt);
         }
         if(keys[GLFW_KEY_DOWN]) {
-            if(player->position.y <= height - player->size.y) {
-                player->position.y += velocity;
-            }
+            player->moveDown(dt, height);
         }
     }
 }
 
 void Game::render() {
-    
     if(state == GAME_ACTIVE) {
-        
-
         player->draw(*renderer);
-
-        // TODO: Refactor arena code into its own class
-        renderer->drawSprite(glm::vec2(150, 0), glm::vec2(900, 20), 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-        renderer->drawSprite(glm::vec2(150, 780), glm::vec2(900, 20), 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-        renderer->drawSprite(glm::vec2(1030, 20), glm::vec2(20, 860), 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-        renderer->drawSprite(glm::vec2(150, 20), glm::vec2(20, 253), 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-        renderer->drawSprite(glm::vec2(150, 526), glm::vec2(20, 254), 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
         levels[level].draw(*renderer);
     }
 }

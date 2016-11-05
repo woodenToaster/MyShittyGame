@@ -132,6 +132,7 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameLevel.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Player.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Texture.cpp" />
@@ -146,6 +147,7 @@
     <ClInclude Include="EntityRenderer.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameLevel.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Texture.h" />

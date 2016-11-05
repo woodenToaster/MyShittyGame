@@ -13,17 +13,18 @@
 class GameLevel
 {
 public:
-    std::vector<Entity> bricks;
+    std::vector<Entity> arena;
     std::vector<Enemy> enemies;
 
     GameLevel() {}
 
     void load(const GLchar *file, GLuint levelWidth, GLuint levelHeight);
     void draw(EntityRenderer &renderer);
-    GLboolean isCompleted();
-
-private:
+    // GLboolean isCompleted();
+    void init();
     void init(std::vector<std::vector<GLuint>> tileData, GLuint levelWidth, GLuint levelHeight);
+private:
+    
 };
 
 #endif
