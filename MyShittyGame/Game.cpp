@@ -193,4 +193,27 @@ void Game::render() {
         player->draw(*renderer);
         levels[level].draw(*renderer);
     }
+    else if(state == GAME_MENU) {
+        typedef glm::vec2 v;
+        renderer->drawSprite(v(50, 50), v(10, 60), 0);
+        renderer->drawSprite(v(50, 110), v(60, 10), 0);
+        renderer->drawSprite(v(130, 110), v(60, 10), 0);
+        renderer->drawSprite(v(130, 50), v(60, 10), 0);
+        renderer->drawSprite(v(130, 50), v(10, 60), 0);
+        renderer->drawSprite(v(190, 50), v(10, 70), 0);
+        renderer->drawSprite(v(220, 50), v(60, 10), 0);
+        renderer->drawSprite(v(220, 50), v(10, 30), 0);
+        renderer->drawSprite(v(220, 80), v(60, 10), 0);
+        renderer->drawSprite(v(220, 110), v(60, 10), 0);
+        renderer->drawSprite(v(270, 80), v(10, 30), 0);
+        renderer->drawSprite(v(310, 50), v(60, 10), 0);
+        renderer->drawSprite(v(310, 50), v(10, 60), 0);
+        renderer->drawSprite(v(310, 110), v(60, 10), 0);
+        renderer->drawSprite(v(310, 80), v(60, 10), 0);
+        renderer->drawSprite(v(400, 50), v(60, 10), 0);
+        renderer->drawSprite(v(400, 50), v(10, 70), 0);
+        renderer->drawSprite(v(450, 50), v(10, 30), 0);
+        renderer->drawSprite(v(400, 80), v(60, 10), 0);
+        renderer->drawSprite(v(400, 95), v(50, 10), 45);
+    }
 }
