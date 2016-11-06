@@ -103,8 +103,10 @@ void GameLevel::draw(EntityRenderer &renderer)
     }
 }
 
-void GameLevel::init() {
-    load("levels\\level1.txt");
+void GameLevel::init(std::string name) {
+    std::string prefix = "levels\\";
+    std::string fullName = prefix + name;
+    load(fullName.c_str());
 }
 
 void GameLevel::init(std::vector<std::vector<GLuint>> tileData, GLuint levelWidth, GLuint levelHeight)

@@ -30,7 +30,7 @@ public:
     void loadWalls(std::istream& fstream);
     void loadEnemies(std::istream& fstream);
     void draw(EntityRenderer &renderer);
-    void init();
+    void init(std::string name);
     void init(std::vector<std::vector<GLuint>> tileData, GLuint levelWidth, GLuint levelHeight);
 private:
     

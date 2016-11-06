@@ -33,11 +33,16 @@ void Game::init() {
     glm::vec2 playerSize = glm::vec2(40, 40);
     player = new Player(playerPos, playerSize);
 
-    GameLevel levelOne;
-    levelOne.init();
+    levelNames.push_back("level1.txt");
 
-    levels.push_back(levelOne);
+    for(std::string& levelName : levelNames) {
+        GameLevel levelToLoad;
+        levelToLoad.init(levelName);
+        levels.push_back(levelToLoad);
+    }
+
     level = 0;
+    enemiesActive = false;
 }
 
 void Game::updateEnemies(GLfloat dt) {
@@ -88,6 +93,7 @@ void Game::closeDoor() {
     Entity door(doorPos, doorSize, doorColor);
     levels[level].arena.push_back(door);
     doorOpen = false;
+    enemiesActive = true;
 
     if(false) {
         for(Enemy& enemy : levels[level].enemies) {
@@ -121,7 +127,8 @@ void Game::checkDoor() {
 
 void Game::update(GLfloat dt) {
     if(state == GAME_ACTIVE) {
-        updateEnemies(dt);
+        if(enemiesActive)
+            updateEnemies(dt);
         checkCollisions();
         if(doorOpen) {
             checkDoor();

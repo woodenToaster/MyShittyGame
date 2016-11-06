@@ -10,31 +10,24 @@
 
 #include "GameLevel.h"
 
-enum GameState {
-    GAME_ACTIVE,
-    GAME_MENU,
-    GAME_WIN
-};
-
-const glm::vec2 PLAYER_SIZE(20, 20);
-const GLfloat PLAYER_VELOCITY(400.0f);
-
 class Game
 {
 public:
+    enum GameState {GAME_ACTIVE, GAME_MENU, GAME_WIN};
     GameState state;
     bool keys[1024];
     bool doorOpen;
+    bool enemiesActive;
     GLuint width;
     GLuint height;
     std::vector<GameLevel> levels;
+    std::vector<std::string> levelNames;
     GLuint level;
 
     Game(GLuint width, GLuint height);
     ~Game();
 
     void init();
-
     void processInput(GLfloat dt);
     void updateEnemies(GLfloat dt);
     void closeDoor();

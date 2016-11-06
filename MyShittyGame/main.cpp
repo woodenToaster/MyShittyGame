@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     GLfloat deltaTime = 0.0f;
     GLfloat lastFrame = 0.0f;
 
-    MyShittyGame.state = GAME_ACTIVE;
+    MyShittyGame.state = Game::GAME_ACTIVE;
 
     while(!glfwWindowShouldClose(window))
     {
