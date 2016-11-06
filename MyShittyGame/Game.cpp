@@ -34,6 +34,15 @@ void Game::init() {
     player = new Player(playerPos, playerSize);
 
     levelNames.push_back("level1.txt");
+    levelNames.push_back("level2.txt");
+    levelNames.push_back("level3.txt");
+    levelNames.push_back("level4.txt");
+    levelNames.push_back("level5.txt");
+    levelNames.push_back("level6.txt");
+    levelNames.push_back("level7.txt");
+    levelNames.push_back("level8.txt");
+    levelNames.push_back("level9.txt");
+    levelNames.push_back("level10.txt");
 
     for(std::string& levelName : levelNames) {
         GameLevel levelToLoad;
@@ -125,6 +134,27 @@ void Game::checkDoor() {
     }
 }
 
+void Game::checkExit() {
+    glm::vec2 exitPos = levels[level].exitPosition;
+    glm::vec2 exitSize = levels[level].exitSize;
+    bool xIsExited = player->position.x > exitPos.x + exitSize.x;
+    bool yIsExitedTop = player->position.y < exitPos.y + exitSize.y;
+    bool yIsExitedBottom = player->position.y + player->size.y > exitPos.y;
+    bool yIsExited = yIsExitedTop && yIsExitedBottom;
+    bool playerExited = xIsExited && yIsExited;
+
+    if(playerExited) {
+        doNextLevel();
+    }
+}
+
+void Game::doNextLevel() {
+    level++;
+    enemiesActive = false;
+    doorOpen = true;
+    player->position = glm::vec2(0.0f, 400.0f);
+}
+
 void Game::update(GLfloat dt) {
     if(state == GAME_ACTIVE) {
         if(enemiesActive)
@@ -133,9 +163,12 @@ void Game::update(GLfloat dt) {
         if(doorOpen) {
             checkDoor();
         }
+        checkExit();
+        if(player->lives == 0) {
+            state = GAME_MENU;
+        }
     }
 }
-
 
 void Game::processInput(GLfloat dt) {
     if(state == GAME_ACTIVE)

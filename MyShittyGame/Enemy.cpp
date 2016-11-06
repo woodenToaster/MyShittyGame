@@ -26,32 +26,38 @@ void Enemy::update(float dt, GLuint width, GLuint height, std::vector<Entity> wa
     switch(direction) {
         case HORIZONTAL:
             if(position.x >= 0 && !movingRight) {
-                position.x -= velocityDelta;
-                // undoOverlap(walls);
-            }
-            if(position.x <= width - size.x) {
                 position.x += velocityDelta;
-                // undoOverlap(walls);
+                //undoOverlap(walls);
             }
-            if(position.x <= 0 || position.x + size.x >= width) {
-                velocity = -velocity;
-                movingRight = !movingRight;
-                rotation = -rotation;
+            if(position.x <= width - size.x && movingRight) {
+                position.x += velocityDelta;
+                //undoOverlap(walls);
+            }
+            if(position.x <= 0) {
+                position.x = 0;
+                onCollision(Entity());
+            }
+            else if(position.x + size.x >= width) {
+                position.x = width - size.x;
+                onCollision(Entity());
             }
             break;
         case VERTICAL:
-            if(position.y >= 0 && !movingUp) {
-                position.y -= velocityDelta;
-                // undoOverlap(walls);
-            }
-            if(position.y <= height - size.y) {
+            if(position.y >= 0 && movingUp) {
                 position.y += velocityDelta;
                 // undoOverlap(walls);
             }
-            if(position.y <= 0 || position.y + size.y >= height) {
-                velocity = -velocity;
-                movingUp = !movingUp;
-                rotation = -rotation;
+            if(position.y <= height - size.y && !movingUp) {
+                position.y += velocityDelta;
+                // undoOverlap(walls);
+            }
+            if(position.y <= 0) {
+                position.y = 0;
+                onCollision(Entity());
+            }
+            else if(position.y + size.y >= height) {
+                position.y = height - size.y;
+                onCollision(Entity());
             }
             break;
     }
@@ -60,6 +66,12 @@ void Enemy::update(float dt, GLuint width, GLuint height, std::vector<Entity> wa
 void Enemy::onCollision(Entity& other) {
     velocity = -velocity;
     rotation = -rotation;
+    if(direction == HORIZONTAL) {
+        movingRight = !movingRight;
+    }
+    if(direction == VERTICAL) {
+        movingUp = !movingUp;
+    }
     /*switch(other.type) {
         case WALL:
             velocity = -velocity;

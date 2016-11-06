@@ -35,6 +35,8 @@ public:
     void closeExit();
     void openExit();
     void checkDoor();
+    void checkExit();
+    void doNextLevel();
     void update(GLfloat dt);
     void render();
     void checkCollisions();
