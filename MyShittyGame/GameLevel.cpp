@@ -1,32 +1,95 @@
 #include "GameLevel.h"
 
-#include <fstream>
+#include <iostream>
 #include <sstream>
 
-void GameLevel::load(const GLchar *file, GLuint levelWidth, GLuint levelHeight)
-{
-    // TODO: Figure out scheme to store level data.
+#define ENTITY_SIZE glm::vec2(40, 40)
 
-    // Clear old data
-    this->arena.clear();
-    // Load from file
-    GLuint tileCode;
-    GameLevel level;
+void GameLevel::load(const GLchar *file)
+{
+    arena.clear();
     std::string line;
     std::ifstream fstream(file);
-    std::vector<std::vector<GLuint>> tileData;
     if(fstream)
     {
-        while(std::getline(fstream, line)) // Read each line from level file
-        {
-            std::istringstream sstream(line);
-            std::vector<GLuint> row;
-            while(sstream >> tileCode) // Read each word seperated by spaces
-                row.push_back(tileCode);
-            tileData.push_back(row);
+        while(std::getline(fstream, line)) {
+            loadWalls(fstream);
+            loadEnemies(fstream);
         }
-        if(tileData.size() > 0)
-            this->init(tileData, levelWidth, levelHeight);
+        // this->init(tileData, levelWidth, levelHeight);
+        fstream.close();
+    }
+}
+
+void GameLevel::loadWalls(std::istream& fstream) {
+    std::string line;
+    std::string state;
+    GLfloat temp;
+
+    while(std::getline(fstream, line)) {
+        if(line.compare("enemies") == 0) {
+            return;
+        }
+        if(line.compare("door") == 0) {
+            state = "door";
+            continue;
+        }
+        if(line.compare("exit") == 0) {
+            state = "exit";
+            continue;
+        }
+        std::vector<GLfloat> data;
+        std::istringstream sstream(line);
+        while(sstream >> temp) {
+            data.push_back(temp);
+            if(sstream.peek() == ',') {
+                sstream.ignore();
+            }
+        }
+        glm::vec2 wallPos = glm::vec2(data[0], data[1]);
+        glm::vec2 wallSize = glm::vec2(data[2], data[3]);
+        glm::vec3 wallColor = glm::vec3(data[4], data[5], data[6]);
+        if(state.compare("door") == 0) {
+            doorPosition = wallPos;
+            doorSize = wallSize;
+            doorColor = wallColor;
+        }
+        else if(state.compare("exit") == 0) {
+            exitPosition = wallPos;
+            exitSize = wallSize;
+            exitColor = wallColor;
+            Entity exit(wallPos, wallSize, wallColor);
+            arena.insert(arena.begin(), exit);
+        }
+        else {
+            Entity wall(wallPos, wallSize, wallColor);
+            arena.push_back(wall);
+        }
+    }
+}
+
+void GameLevel::loadEnemies(std::istream& fstream) {
+    std::string line;
+    GLfloat temp;
+
+    while(std::getline(fstream, line)) {
+        if(line.empty())
+            return;
+
+        std::vector<GLfloat> data;
+        std::istringstream sstream(line);
+        while(sstream >> temp) {
+            data.push_back(temp);
+            if(sstream.peek() == ',') {
+                sstream.ignore();
+            }
+        }
+        glm::vec2 pos = glm::vec2(data[0], data[1]);
+        glm::vec2 size = glm::vec2(data[2], data[3]);
+        glm::vec3 color = glm::vec3(data[4], data[5], data[6]);
+        Enemy::Direction dir = static_cast<Enemy::Direction>(static_cast<int>(data[7]));
+        Enemy enemy(pos, size, color, dir);
+        enemies.push_back(enemy);
     }
 }
 
@@ -40,45 +103,8 @@ void GameLevel::draw(EntityRenderer &renderer)
     }
 }
 
-//GLboolean GameLevel::isCompleted()
-//{
-//    for(Entity &tile : this->bricks)
-//        if(!tile.isSolid && !tile.destroyed)
-//            return GL_FALSE;
-//    return GL_TRUE;
-//}
-
 void GameLevel::init() {
-    // TODO: Get this data from a file (JSON?)
-    glm::vec3 white = glm::vec3(1.0f, 1.0f, 1.0f);
-    Entity top(glm::vec2(150, 0), glm::vec2(900, 20), white);
-    Entity bottom(glm::vec2(150, 780), glm::vec2(900, 20), white);
-    Entity rightTop(glm::vec2(1030, 20), glm::vec2(20, 130), white);
-    Entity rightBottom(glm::vec2(1030, 200), glm::vec2(20, 580), white);
-    Entity leftTop(glm::vec2(150, 20), glm::vec2(20, 253), white);
-    Entity leftBottom(glm::vec2(150, 526), glm::vec2(20, 254), white);
-
-    doorPosition = glm::vec2(150, 273);
-    doorSize = glm::vec2(20, 253);
-
-    exitPosition = glm::vec2(1030, 150);
-    exitSize = glm::vec2(20, 50);
-    Entity exit(exitPosition, exitSize, white);
-
-    top.isSolid = true;
-    bottom.isSolid = true;
-    rightTop.isSolid = true;
-    rightBottom.isSolid = true;
-    leftTop.isSolid = true;
-    leftBottom.isSolid = true;
-
-    arena.push_back(exit);
-    arena.push_back(top);
-    arena.push_back(bottom);
-    arena.push_back(rightTop);
-    arena.push_back(rightBottom);
-    arena.push_back(leftTop);
-    arena.push_back(leftBottom);
+    load("levels\\level1.txt");
 }
 
 void GameLevel::init(std::vector<std::vector<GLuint>> tileData, GLuint levelWidth, GLuint levelHeight)

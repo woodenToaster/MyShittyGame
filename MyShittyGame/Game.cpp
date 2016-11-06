@@ -3,8 +3,6 @@
 #include "EntityRenderer.h"
 #include "Player.h"
 
-#define ENTITY_SIZE glm::vec2(40, 40)
-
 EntityRenderer *renderer;
 Player *player;
 
@@ -32,23 +30,20 @@ void Game::init() {
     renderer = new EntityRenderer(ResourceManager::getShader("sprite"));
 
     glm::vec2 playerPos = glm::vec2(0.0f, 400.0f);
-    player = new Player(playerPos, ENTITY_SIZE);
+    glm::vec2 playerSize = glm::vec2(40, 40);
+    player = new Player(playerPos, playerSize);
 
     GameLevel levelOne;
     levelOne.init();
 
-    Enemy horizontalEnemy(glm::vec2(400, 600), ENTITY_SIZE, glm::vec3(0.0f, 0.0f, 1.0f), Enemy::HORIZONTAL);
-    Enemy verticalEnemy(glm::vec2(800, 400), ENTITY_SIZE, glm::vec3(1.0f, 0.0f, 0.0f), Enemy::VERTICAL);
-
-    levelOne.enemies.push_back(horizontalEnemy);
-    levelOne.enemies.push_back(verticalEnemy);
     levels.push_back(levelOne);
     level = 0;
 }
 
 void Game::updateEnemies(GLfloat dt) {
     for(auto& enemy : levels[level].enemies) {
-        enemy.update(dt, width, height);
+        enemy.update(dt, width, height, levels[level].arena);
+        enemy.rotation += 5.0f;
     }
 }
 
@@ -80,6 +75,7 @@ void Game::checkCollisions() {
         for(Entity& wall : levels[level].arena) {
             if(enemy.checkCollision(wall)) {
                 enemy.onCollision(wall);
+                return;
             }
         }
     }
@@ -88,9 +84,18 @@ void Game::checkCollisions() {
 void Game::closeDoor() {
     glm::vec2 doorPos = levels[level].doorPosition;
     glm::vec2 doorSize = levels[level].doorSize;
-    Entity door(doorPos, doorSize, glm::vec3(1.0f, 1.0f, 1.0f));
+    glm::vec3 doorColor = levels[level].doorColor;
+    Entity door(doorPos, doorSize, doorColor);
     levels[level].arena.push_back(door);
     doorOpen = false;
+
+    if(false) {
+        for(Enemy& enemy : levels[level].enemies) {
+            enemy.direction = enemy.direction == Enemy::HORIZONTAL ? Enemy::VERTICAL : Enemy::HORIZONTAL;
+            enemy.movingRight = !enemy.movingRight;
+            enemy.movingUp = !enemy.movingUp;
+        }
+    }
 }
 
 void Game::openDoor() {
@@ -115,10 +120,12 @@ void Game::checkDoor() {
 }
 
 void Game::update(GLfloat dt) {
-    updateEnemies(dt);
-    checkCollisions();
-    if(doorOpen) {
-        checkDoor();
+    if(state == GAME_ACTIVE) {
+        updateEnemies(dt);
+        checkCollisions();
+        if(doorOpen) {
+            checkDoor();
+        }
     }
 }
 

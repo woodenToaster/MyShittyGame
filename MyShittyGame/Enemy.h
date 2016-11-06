@@ -1,6 +1,8 @@
 #ifndef ENEMY_H
 #define ENEMY_H
 
+#include <vector>
+
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 
@@ -15,7 +17,8 @@ public:
     GLfloat velocity;
 
     Enemy(glm::vec2 enemyPosition, glm::vec2 enemySize, glm::vec3 color, Direction dir);
-    void update(GLfloat dt, GLuint width, GLuint height);
+    void undoOverlap(std::vector<Entity> walls);
+    void update(GLfloat dt, GLuint width, GLuint height, std::vector<Entity> walls);
     void onCollision(Entity& other);
 
 private:
