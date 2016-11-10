@@ -87,8 +87,8 @@ void GameLevel::loadEnemies(std::istream& fstream) {
         glm::vec2 pos = glm::vec2(data[0], data[1]);
         glm::vec2 size = glm::vec2(data[2], data[3]);
         glm::vec3 color = glm::vec3(data[4], data[5], data[6]);
-        Enemy::Direction dir = static_cast<Enemy::Direction>(static_cast<int>(data[7]));
-        Enemy enemy(pos, size, color, dir);
+        Enemy::EnemyType type = static_cast<Enemy::EnemyType>(static_cast<int>(data[7]));
+        Enemy enemy(pos, size, color, type);
         enemies.push_back(enemy);
     }
 }

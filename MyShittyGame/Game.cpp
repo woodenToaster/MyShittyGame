@@ -38,11 +38,11 @@ void Game::init() {
     levelNames.push_back("level3.txt");
     levelNames.push_back("level4.txt");
     levelNames.push_back("level5.txt");
-    levelNames.push_back("level6.txt");
+    levelNames.push_back("level10.txt");
     levelNames.push_back("level7.txt");
     levelNames.push_back("level8.txt");
     levelNames.push_back("level9.txt");
-    levelNames.push_back("level10.txt");
+    levelNames.push_back("level6.txt");
 
     for(std::string& levelName : levelNames) {
         GameLevel levelToLoad;
@@ -74,22 +74,15 @@ void Game::checkCollisions() {
 
     // Check enemy collisions
     for(Enemy& enemy : levels[level].enemies) {
-
         // With other enemies
         for(Enemy& otherEnemy : levels[level].enemies) {
             if(&otherEnemy == &enemy) {
                 continue;
             }
             if(enemy.checkCollision(otherEnemy)) {
+                enemy.undoEnemyOverlap(otherEnemy);
                 enemy.onCollision(otherEnemy);
-            }
-        }
-
-        // With arena walls
-        for(Entity& wall : levels[level].arena) {
-            if(enemy.checkCollision(wall)) {
-                enemy.onCollision(wall);
-                return;
+                otherEnemy.onCollision(enemy);
             }
         }
     }
@@ -106,9 +99,8 @@ void Game::closeDoor() {
 
     if(false) {
         for(Enemy& enemy : levels[level].enemies) {
-            enemy.direction = enemy.direction == Enemy::HORIZONTAL ? Enemy::VERTICAL : Enemy::HORIZONTAL;
-            enemy.movingRight = !enemy.movingRight;
-            enemy.movingUp = !enemy.movingUp;
+            enemy.enemyType = enemy.enemyType == Enemy::HORIZONTAL ? Enemy::VERTICAL : Enemy::HORIZONTAL;
+            enemy.reverseDirection();
         }
     }
 }
@@ -155,21 +147,6 @@ void Game::doNextLevel() {
     player->position = glm::vec2(0.0f, 400.0f);
 }
 
-void Game::update(GLfloat dt) {
-    if(state == GAME_ACTIVE) {
-        if(enemiesActive)
-            updateEnemies(dt);
-        checkCollisions();
-        if(doorOpen) {
-            checkDoor();
-        }
-        checkExit();
-        if(player->lives == 0) {
-            state = GAME_MENU;
-        }
-    }
-}
-
 void Game::processInput(GLfloat dt) {
     if(state == GAME_ACTIVE)
     {
@@ -184,6 +161,29 @@ void Game::processInput(GLfloat dt) {
         }
         if(keys[GLFW_KEY_DOWN]) {
             player->moveDown(dt, height, levels[level].arena);
+        }
+    }
+    if(state == GAME_MENU) {
+        if(keys[GLFW_KEY_SPACE]) {
+            level = 0;
+            player->lives = 3;
+            state = GAME_ACTIVE;
+            enemiesActive = false;
+        }
+    }
+}
+
+void Game::update(GLfloat dt) {
+    if(state == GAME_ACTIVE) {
+        if(enemiesActive)
+            updateEnemies(dt);
+        checkCollisions();
+        if(doorOpen) {
+            checkDoor();
+        }
+        checkExit();
+        if(player->lives == 0) {
+            state = GAME_MENU;
         }
     }
 }
