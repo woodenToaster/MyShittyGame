@@ -5,6 +5,7 @@
 
 #include <GL/glew.h>
 #include <glm/glm.hpp>
+#include <irrKlang.h>
 
 #include "Entity.h"
 
@@ -14,8 +15,9 @@ public:
     bool alive;
     GLfloat velocity;
     glm::vec2 startingPos;
+    irrklang::ISoundEngine* soundEngine;
 
-    Player(glm::vec2 playerPos, glm::vec2 playerSize);
+    Player(glm::vec2 playerPos, glm::vec2 playerSize, irrklang::ISoundEngine* soundEngine);
     void moveUp(GLfloat dt, std::vector<Entity> walls);
     void moveDown(GLfloat dt, GLuint screenHeight, std::vector<Entity> walls);
     void moveLeft(GLfloat dt, std::vector<Entity> walls);

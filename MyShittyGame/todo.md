@@ -1,7 +1,7 @@
 # TODO
 
 ## Gameplay
-- [ ] Add sounds
+- [X] Add sounds
 - [ ] Add text (lives, level, time)
 - [ ] Show a visible exit
 

@@ -5,6 +5,10 @@
 
 #define ENTITY_SIZE glm::vec2(40, 40)
 
+GameLevel::GameLevel() {
+
+}
+
 void GameLevel::load(const GLchar *file)
 {
     arena.clear();

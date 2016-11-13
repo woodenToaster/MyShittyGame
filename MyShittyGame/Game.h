@@ -7,12 +7,14 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <irrKlang.h>
 
 #include "GameLevel.h"
 
 class Game
 {
 public:
+    irrklang::ISoundEngine* soundEngine;
     enum GameState {GAME_ACTIVE, GAME_MENU, GAME_WIN};
     GameState state;
     bool keys[1024];
@@ -40,6 +42,7 @@ public:
     void update(GLfloat dt);
     void render();
     void checkCollisions();
+
 };
 
 #endif

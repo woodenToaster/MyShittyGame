@@ -1,7 +1,12 @@
 #include "Player.h"
 
-Player::Player(glm::vec2 playerPos, glm::vec2 playerSize) : lives(3), alive(true), velocity(400.0f), startingPos(playerPos),
-Entity(playerPos, playerSize, glm::vec3(0.0f, 1.0f, 0.0f), PLAYER) {
+Player::Player(glm::vec2 playerPos, glm::vec2 playerSize, irrklang::ISoundEngine* soundEngine) :
+    lives(3),
+    alive(true),
+    velocity(400.0f),
+    startingPos(playerPos),
+    soundEngine(soundEngine),
+    Entity(playerPos, playerSize, glm::vec3(0.0f, 1.0f, 0.0f), PLAYER) {
 
 }
 
@@ -68,6 +73,7 @@ void Player::onCollision(Entity& other) {
         case ENEMY:
             lives--;
             position = startingPos;
+            soundEngine->play2D("sounds/bleep.ogg", false);
             break;
     }
 }

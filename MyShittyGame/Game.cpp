@@ -29,12 +29,15 @@ void Game::init() {
     // ResourceManager::loadTexture("textures/awesomeface.png", GL_TRUE, "face");
     renderer = new EntityRenderer(ResourceManager::getShader("sprite"));
 
+    // Init sound engine
+    soundEngine = irrklang::createIrrKlangDevice();
+
     glm::vec2 playerPos = glm::vec2(0.0f, 400.0f);
     glm::vec2 playerSize = glm::vec2(40, 40);
-    player = new Player(playerPos, playerSize);
+    player = new Player(playerPos, playerSize, soundEngine);
 
     levelNames.push_back("level1.txt");
-    levelNames.push_back("level2.txt");
+    levelNames.push_back("level10.txt");
     levelNames.push_back("level3.txt");
     levelNames.push_back("level4.txt");
     levelNames.push_back("level5.txt");
@@ -52,7 +55,9 @@ void Game::init() {
 
     level = 0;
     enemiesActive = false;
+    soundEngine->play2D("sounds/newLevel.ogg", false);
 }
+
 
 void Game::updateEnemies(GLfloat dt) {
     for(auto& enemy : levels[level].enemies) {
@@ -144,6 +149,7 @@ void Game::doNextLevel() {
     enemiesActive = false;
     doorOpen = true;
     player->setPosition(glm::vec2(0.0f, 400.0f));
+    soundEngine->play2D("sounds/newLevel.ogg", false);
 }
 
 void Game::processInput(GLfloat dt) {
@@ -183,6 +189,7 @@ void Game::update(GLfloat dt) {
         checkExit();
         if(player->lives == 0) {
             state = GAME_MENU;
+            soundEngine->play2D("sounds/gameOver.ogg", false);
         }
     }
 }

@@ -6,6 +6,7 @@
 
 #include <GL/glew.h>
 #include <glm/glm.hpp>
+#include <irrKlang.h>
 
 #include "Entity.h"
 #include "Enemy.h"
@@ -25,7 +26,7 @@ public:
     glm::vec3 exitColor;
     bool isCompleted;
 
-    GameLevel() {}
+    GameLevel();
     void load(const GLchar *file);
     void loadWalls(std::istream& fstream);
     void loadEnemies(std::istream& fstream);

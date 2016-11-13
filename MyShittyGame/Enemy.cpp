@@ -1,8 +1,11 @@
 #include <algorithm>
 #include <iostream>
+
+#include <irrklang.h>
+
 #include "Enemy.h"
 
-Enemy::Enemy(glm::vec2 enemyPosition, glm::vec2 enemySize, glm::vec3 color, EnemyType enemyType) : 
+Enemy::Enemy(glm::vec2 enemyPosition, glm::vec2 enemySize, glm::vec3 color, EnemyType enemyType) :
     enemyType(enemyType),
     velocity(750.0f),
     Entity(enemyPosition, enemySize, color, ENEMY) {
