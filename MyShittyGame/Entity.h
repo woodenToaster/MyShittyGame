@@ -10,7 +10,7 @@
 class Entity {
 
 public:
-    enum EntityType { PLAYER, ENEMY, WALL };
+    enum EntityType { PLAYER, ENEMY, WALL, EXIT };
     EntityType type;
     glm::vec2 velocity;
     glm::vec3 color;

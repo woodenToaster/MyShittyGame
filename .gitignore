@@ -86,3 +86,6 @@ ClientBin/
 # Audio files
 sounds/
 *.ogg
+
+# Level files
+levels/

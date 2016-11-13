@@ -7,14 +7,16 @@ Entity::Entity():
     color(1.0f),
     rotation(0.0f),
     sprite(),
-    isSolid(false),
-    destroyed(false) { }
+    isSolid(true),
+    destroyed(false) {
+
+}
 
 Entity::Entity(glm::vec2 pos, glm::vec2 size, Texture2d sprite, glm::vec3 color, glm::vec2 velocity)
-: position(pos), size(size), velocity(velocity), color(color), rotation(0.0f), sprite(sprite), isSolid(false), destroyed(false) {}
+: position(pos), size(size), velocity(velocity), color(color), rotation(0.0f), sprite(sprite), isSolid(true), destroyed(false) {}
 
 Entity::Entity(glm::vec2 pos, glm::vec2 size, glm::vec3 color, EntityType type)
-: position(pos), size(size), color(color), rotation(0.0f), sprite(), isSolid(false), destroyed(false), type(type) { }
+: position(pos), size(size), color(color), rotation(0.0f), sprite(), isSolid(true), destroyed(false), type(type) { }
 
 GLfloat Entity::getBottomSide() {
     return position.y + size.y;

@@ -3,7 +3,8 @@
 ## Gameplay
 - [X] Add sounds
 - [ ] Add text (lives, level, time)
-- [ ] Show a visible exit
+- [X] Show a visible exit
+- [ ] Door should always be visible.  Prevents sudden death.
 
 ## Level Generation
 - [ ] Make sure there is a path to the exit (A*)

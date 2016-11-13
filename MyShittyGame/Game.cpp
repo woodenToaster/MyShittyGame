@@ -72,7 +72,6 @@ void Game::checkCollisions() {
         if(player->checkCollision(enemy)) {
             player->onCollision(enemy);
             openDoor();
-            closeExit();
         }
     }
 
@@ -126,20 +125,15 @@ void Game::openExit() {
 void Game::checkDoor() {
     if(player->getX() > levels[level].doorPosition.x + levels[level].doorSize.x) {
         closeDoor();
-        openExit();
     }
 }
 
 void Game::checkExit() {
     glm::vec2 exitPos = levels[level].exitPosition;
     glm::vec2 exitSize = levels[level].exitSize;
-    bool xIsExited = player->getX() > exitPos.x + exitSize.x;
-    bool yIsExitedTop = player->getY() < exitPos.y + exitSize.y;
-    bool yIsExitedBottom = player->getY() + player->getSizeY() > exitPos.y;
-    bool yIsExited = yIsExitedTop && yIsExitedBottom;
-    bool playerExited = xIsExited && yIsExited;
+    Entity exit(exitPos, exitSize, glm::vec3(1.0f, 0.0f, 0.0f), Entity::EXIT);
 
-    if(playerExited) {
+    if(player->checkCollision(exit)) {
         doNextLevel();
     }
 }

@@ -14,7 +14,7 @@ void Player::moveUp(GLfloat dt, std::vector<Entity> walls) {
     if(position.y >= 0) {
         position.y -= dt * velocity;
         for(Entity& wall : walls) {
-            if(checkCollision(wall)) {
+            if(checkCollision(wall) && wall.isSolid) {
                 position.y = wall.getBottomSide();
             }
         }
@@ -28,7 +28,7 @@ void Player::moveDown(GLfloat dt, GLuint screenHeight, std::vector<Entity> walls
     if(position.y <= screenHeight - size.y) {
         position.y += dt * velocity;
         for(Entity& wall : walls) {
-            if(checkCollision(wall)) {
+            if(checkCollision(wall) && wall.isSolid) {
                 position.y = wall.getY() - size.y;
             }
         }
@@ -42,7 +42,7 @@ void Player::moveLeft(GLfloat dt, std::vector<Entity> walls) {
     if(position.x >= 0) {
         position.x -= dt * velocity;
         for(Entity& wall : walls) {
-            if(checkCollision(wall)) {
+            if(checkCollision(wall) && wall.isSolid) {
                 position.x = wall.getRightSide();
             }
         }
@@ -56,7 +56,7 @@ void Player::moveRight(GLfloat dt, GLuint screenWidth, std::vector<Entity> walls
     if(position.x <= screenWidth - size.x) {
         position.x += dt * velocity;
         for(Entity& wall : walls) {
-            if(checkCollision(wall)) {
+            if(checkCollision(wall) && wall.isSolid) {
                 position.x = wall.getX() - size.x;
             }
         }
@@ -75,5 +75,6 @@ void Player::onCollision(Entity& other) {
             position = startingPos;
             soundEngine->play2D("sounds/bleep.ogg", false);
             break;
+        // case EXIT:
     }
 }

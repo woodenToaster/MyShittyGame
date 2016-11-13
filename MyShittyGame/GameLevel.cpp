@@ -63,6 +63,7 @@ void GameLevel::loadWalls(std::istream& fstream) {
             exitSize = wallSize;
             exitColor = wallColor;
             Entity exit(wallPos, wallSize, wallColor);
+            exit.isSolid = false;
             arena.insert(arena.begin(), exit);
         }
         else {
