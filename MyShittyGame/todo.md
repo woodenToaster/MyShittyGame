@@ -11,7 +11,7 @@
 
 ## Rendering
 - [ ] Use indexed buffer draws
-
+- [ ] Remove duplicate code from Enemy::checkEnemyCollistion
 ## Refactoring
 - [ ] Change all public members to private and add getters/setters
 

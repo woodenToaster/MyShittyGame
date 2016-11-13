@@ -38,11 +38,11 @@ void Game::init() {
     levelNames.push_back("level3.txt");
     levelNames.push_back("level4.txt");
     levelNames.push_back("level5.txt");
-    levelNames.push_back("level10.txt");
+    levelNames.push_back("level6.txt");
     levelNames.push_back("level7.txt");
     levelNames.push_back("level8.txt");
     levelNames.push_back("level9.txt");
-    levelNames.push_back("level6.txt");
+    levelNames.push_back("level10.txt");
 
     for(std::string& levelName : levelNames) {
         GameLevel levelToLoad;
@@ -57,7 +57,6 @@ void Game::init() {
 void Game::updateEnemies(GLfloat dt) {
     for(auto& enemy : levels[level].enemies) {
         enemy.update(dt, width, height, levels[level].arena);
-        enemy.rotation += 5.0f;
     }
 }
 
@@ -99,7 +98,7 @@ void Game::closeDoor() {
 
     if(false) {
         for(Enemy& enemy : levels[level].enemies) {
-            enemy.enemyType = enemy.enemyType == Enemy::HORIZONTAL ? Enemy::VERTICAL : Enemy::HORIZONTAL;
+            enemy.swapType();
             enemy.reverseDirection();
         }
     }
@@ -120,7 +119,7 @@ void Game::openExit() {
 }
 
 void Game::checkDoor() {
-    if(player->position.x > levels[level].doorPosition.x + levels[level].doorSize.x) {
+    if(player->getX() > levels[level].doorPosition.x + levels[level].doorSize.x) {
         closeDoor();
         openExit();
     }
@@ -129,9 +128,9 @@ void Game::checkDoor() {
 void Game::checkExit() {
     glm::vec2 exitPos = levels[level].exitPosition;
     glm::vec2 exitSize = levels[level].exitSize;
-    bool xIsExited = player->position.x > exitPos.x + exitSize.x;
-    bool yIsExitedTop = player->position.y < exitPos.y + exitSize.y;
-    bool yIsExitedBottom = player->position.y + player->size.y > exitPos.y;
+    bool xIsExited = player->getX() > exitPos.x + exitSize.x;
+    bool yIsExitedTop = player->getY() < exitPos.y + exitSize.y;
+    bool yIsExitedBottom = player->getY() + player->getSizeY() > exitPos.y;
     bool yIsExited = yIsExitedTop && yIsExitedBottom;
     bool playerExited = xIsExited && yIsExited;
 
@@ -144,7 +143,7 @@ void Game::doNextLevel() {
     level++;
     enemiesActive = false;
     doorOpen = true;
-    player->position = glm::vec2(0.0f, 400.0f);
+    player->setPosition(glm::vec2(0.0f, 400.0f));
 }
 
 void Game::processInput(GLfloat dt) {

@@ -10,7 +10,7 @@ void Player::moveUp(GLfloat dt, std::vector<Entity> walls) {
         position.y -= dt * velocity;
         for(Entity& wall : walls) {
             if(checkCollision(wall)) {
-                position.y = wall.position.y + wall.size.y;
+                position.y = wall.getBottomSide();
             }
         }
         if(position.y < 0) {
@@ -24,7 +24,7 @@ void Player::moveDown(GLfloat dt, GLuint screenHeight, std::vector<Entity> walls
         position.y += dt * velocity;
         for(Entity& wall : walls) {
             if(checkCollision(wall)) {
-                position.y = wall.position.y - size.y;
+                position.y = wall.getY() - size.y;
             }
         }
         if(position.y + size.y > screenHeight) {
@@ -38,7 +38,7 @@ void Player::moveLeft(GLfloat dt, std::vector<Entity> walls) {
         position.x -= dt * velocity;
         for(Entity& wall : walls) {
             if(checkCollision(wall)) {
-                position.x = wall.position.x + wall.size.x;
+                position.x = wall.getRightSide();
             }
         }
         if(position.x < 0) {
@@ -52,7 +52,7 @@ void Player::moveRight(GLfloat dt, GLuint screenWidth, std::vector<Entity> walls
         position.x += dt * velocity;
         for(Entity& wall : walls) {
             if(checkCollision(wall)) {
-                position.x = wall.position.x - size.x;
+                position.x = wall.getX() - size.x;
             }
         }
         if(position.x + size.x > screenWidth) {

@@ -2,15 +2,36 @@
 #include <iostream>
 #include "Enemy.h"
 
-Enemy::Enemy(glm::vec2 enemyPosition, glm::vec2 enemySize, glm::vec3 color, EnemyType enemyType) : enemyType(enemyType), velocity(750.0f),
+Enemy::Enemy(glm::vec2 enemyPosition, glm::vec2 enemySize, glm::vec3 color, EnemyType enemyType) : 
+    enemyType(enemyType),
+    velocity(750.0f),
     Entity(enemyPosition, enemySize, color, ENEMY) {
 
-    if(enemyType == HORIZONTAL) {
-        direction = RIGHT;
-    }
-    else if(enemyType == VERTICAL) {
-        direction = DOWN;
-    }
+    direction = getStartingDirection();
+}
+
+Enemy::Direction Enemy::getStartingDirection() {
+    return isHorizontal() ? RIGHT : DOWN;
+}
+
+bool Enemy::isHorizontal() {
+    return enemyType == HORIZONTAL;
+}
+
+bool Enemy::isVertical() {
+    return enemyType == VERTICAL;
+}
+
+Enemy::EnemyType Enemy::getType() {
+    return enemyType;
+}
+
+void Enemy::setType(EnemyType newType) {
+    enemyType = newType;
+}
+
+void Enemy::swapType() {
+    enemyType = isHorizontal() ? VERTICAL : HORIZONTAL;
 }
 
 void Enemy::undoWallOverlap(std::vector<Entity>& walls) {
@@ -18,16 +39,16 @@ void Enemy::undoWallOverlap(std::vector<Entity>& walls) {
         if(this->checkCollision(wall)) {
             switch(direction) {
             case LEFT:
-                position.x = wall.position.x + wall.size.x;
+                position.x = wall.getRightSide();
                 break;
             case RIGHT:
-                position.x = wall.position.x - size.x;
+                position.x = wall.getX() - size.x;
                 break;
             case UP:
-                position.y = wall.position.y + wall.size.y;
+                position.y = wall.getBottomSide();
                 break;
             case DOWN:
-                position.y = wall.position.y - size.y;
+                position.y = wall.getY() - size.y;
                 break;
             }
             onCollision(wall);
@@ -37,14 +58,22 @@ void Enemy::undoWallOverlap(std::vector<Entity>& walls) {
 }
 
 void Enemy::reverseDirection() {
-    if(enemyType == VERTICAL) {
-        direction = direction == UP ? DOWN : UP;
+    if(isVertical()) {
+        direction = isTravelingUp() ? DOWN : UP;
     }
-    else if(enemyType == HORIZONTAL) {
-        direction = direction == RIGHT ? LEFT : RIGHT;
+    else if(isHorizontal()) {
+        direction = isTravelingRight() ? LEFT : RIGHT;
     }
     velocity = -velocity;
     rotation = -rotation;
+}
+
+bool Enemy::isTravelingRight() {
+    return direction == RIGHT;
+}
+
+bool Enemy::isTravelingUp() {
+    return direction == UP;
 }
 
 void Enemy::undoEnemyOverlap(Enemy& other) {
@@ -54,7 +83,7 @@ void Enemy::undoEnemyOverlap(Enemy& other) {
         case UP:
             switch(direction) {
             case UP:
-                position.y = other.position.y + other.size.y;
+                position.y = other.getBottomSide();
                 break;
             case LEFT:
             case RIGHT:
@@ -69,7 +98,7 @@ void Enemy::undoEnemyOverlap(Enemy& other) {
                 break;
             case LEFT:
             case RIGHT:
-                other.position.y = position.y + size.y;
+                other.position.y = getBottomSide();
                 break;
             }
             break;
@@ -80,7 +109,7 @@ void Enemy::undoEnemyOverlap(Enemy& other) {
                 other.position.x = position.x - other.size.x;
                 break;
             case LEFT:
-                position.x = other.position.x + other.size.x;
+                position.x = other.getRightSide();
                 break;
             }
             break;
@@ -101,6 +130,7 @@ void Enemy::undoEnemyOverlap(Enemy& other) {
 
 void Enemy::update(float dt, GLuint width, GLuint height, std::vector<Entity> walls) {
     GLfloat velocityDelta = velocity * dt;
+    // rotation += 5.0f;
     switch(enemyType) {
         case HORIZONTAL:
             position.x += velocityDelta;
@@ -132,31 +162,25 @@ void Enemy::update(float dt, GLuint width, GLuint height, std::vector<Entity> wa
 }
 
 GLfloat Enemy::getOverlapX(Entity& other) {
-    return std::abs(position.x - other.position.x);
+    return std::abs(position.x - other.getX());
 }
 
 GLfloat Enemy::getOverlapY(Entity& other) {
-    return std::abs(position.y - other.position.y);
+    return std::abs(position.y - other.getY());
 }
 
 
 std::tuple<bool, Enemy::Direction> Enemy::checkEnemyCollision(Enemy& other) {
 
-    bool collisionX = position.x + size.x > other.position.x &&
-        other.position.x + other.size.x > position.x;
+    bool collided = checkCollision(other);
 
-    bool collisionY = position.y + size.y > other.position.y &&
-        other.position.y + other.size.y > position.y;
-
-    bool collided = collisionX && collisionY;
-    
     // This is the side of the current instance that experiences a collision with 'other'
     Direction collisionSide;
-    if(direction == UP) {
+    if(isTravelingUp()) {
         if(other.direction == DOWN) {
             collisionSide = UP;
         }
-        else if(other.direction == RIGHT) {
+        else if(other.isTravelingRight()) {
             GLfloat xoverlap = getOverlapX(other);
             GLfloat yoverlap = getOverlapY(other);
             collisionSide = std::min(xoverlap, yoverlap) == xoverlap ? LEFT : UP;
@@ -171,7 +195,7 @@ std::tuple<bool, Enemy::Direction> Enemy::checkEnemyCollision(Enemy& other) {
         if(other.direction == UP) {
             collisionSide = DOWN;
         }
-        else if(other.direction == RIGHT) {
+        else if(other.isTravelingRight()) {
             GLfloat xoverlap = getOverlapX(other);
             GLfloat yoverlap = getOverlapY(other);
             collisionSide = std::min(xoverlap, yoverlap) == xoverlap ? LEFT : DOWN;
@@ -183,10 +207,10 @@ std::tuple<bool, Enemy::Direction> Enemy::checkEnemyCollision(Enemy& other) {
         }
     }
     else if(direction == LEFT) {
-        if(other.direction == RIGHT) {
+        if(other.isTravelingRight()) {
             collisionSide = LEFT;
         }
-        else if(other.direction == UP) {
+        else if(other.isTravelingUp()) {
             GLfloat xoverlap = getOverlapX(other);
             GLfloat yoverlap = getOverlapY(other);
             collisionSide = std::min(xoverlap, yoverlap) == xoverlap ? LEFT : DOWN;
@@ -197,11 +221,11 @@ std::tuple<bool, Enemy::Direction> Enemy::checkEnemyCollision(Enemy& other) {
             collisionSide = std::min(xoverlap, yoverlap) == xoverlap ? LEFT : UP;
         }
     }
-    else if(direction == RIGHT) {
+    else if(isTravelingRight()) {
         if(other.direction == LEFT) {
             collisionSide = RIGHT;
         }
-        else if(other.direction == UP) {
+        else if(other.isTravelingUp()) {
             GLfloat xoverlap = getOverlapX(other);
             GLfloat yoverlap = getOverlapY(other);
             collisionSide = std::min(xoverlap, yoverlap) == xoverlap ? RIGHT : DOWN;
@@ -217,12 +241,4 @@ std::tuple<bool, Enemy::Direction> Enemy::checkEnemyCollision(Enemy& other) {
 
 void Enemy::onCollision(Entity& other) {
     reverseDirection();
-
-    /*switch(other.type) {
-        case WALL:
-            velocity = -velocity;
-            rotation = -rotation;
-            reverseDirection();
-            break;
-    }*/
 }

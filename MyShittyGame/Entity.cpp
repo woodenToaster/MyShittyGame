@@ -16,6 +16,42 @@ Entity::Entity(glm::vec2 pos, glm::vec2 size, Texture2d sprite, glm::vec3 color,
 Entity::Entity(glm::vec2 pos, glm::vec2 size, glm::vec3 color, EntityType type)
 : position(pos), size(size), color(color), rotation(0.0f), sprite(), isSolid(false), destroyed(false), type(type) { }
 
+GLfloat Entity::getBottomSide() {
+    return position.y + size.y;
+}
+
+GLfloat Entity::getRightSide() {
+    return position.x + size.x;
+}
+
+GLfloat Entity::getX() {
+    return position.x;
+}
+
+GLfloat Entity::getY() {
+    return position.y;
+}
+
+GLfloat Entity::getSizeX() {
+    return size.x;
+}
+
+GLfloat Entity::getSizeY() {
+    return size.y;
+}
+
+void Entity::setX(GLfloat x) {
+    position.x = x;
+}
+
+void Entity::setY(GLfloat y) {
+    position.y = y;
+}
+
+void Entity::setPosition(glm::vec2 pos) {
+    position = pos;
+}
+
 void Entity::drawFromTexture(EntityRenderer &renderer) {
     renderer.drawSpriteFromTexture(sprite, position, size, rotation, color);
 }
