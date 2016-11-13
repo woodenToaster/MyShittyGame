@@ -11,9 +11,10 @@
 
 ## Rendering
 - [ ] Use indexed buffer draws
-- [ ] Remove duplicate code from Enemy::checkEnemyCollistion
+
 ## Refactoring
 - [ ] Change all public members to private and add getters/setters
+- [X] Remove duplicate code from Enemy::checkEnemyCollistion
 
 ## Testing
 - [ ] Set up Travis CI for Linux

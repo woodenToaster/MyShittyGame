@@ -31,6 +31,8 @@ public:
     bool isVertical();
     bool isTravelingRight();
     bool isTravelingUp();
+    glm::vec2 getOverlaps(Entity& other);
+    Direction getCollisionSide(Entity& other, Direction xDir, Direction yDir);
 
 private:
     Direction direction;

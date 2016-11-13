@@ -169,73 +169,95 @@ GLfloat Enemy::getOverlapY(Entity& other) {
     return std::abs(position.y - other.getY());
 }
 
+glm::vec2 Enemy::getOverlaps(Entity& other) {
+    glm::vec2 overlaps;
+    overlaps.x = getOverlapX(other);
+    overlaps.y = getOverlapY(other);
+
+    return overlaps;
+}
+
+Enemy::Direction Enemy::getCollisionSide(Entity& other, Direction xDir, Direction yDir) {
+    glm::vec2 overlaps = getOverlaps(other);
+    Direction collisionSide = std::min(overlaps.x, overlaps.y) == overlaps.x ? xDir : yDir;
+    return collisionSide;
+}
 
 std::tuple<bool, Enemy::Direction> Enemy::checkEnemyCollision(Enemy& other) {
 
     bool collided = checkCollision(other);
 
-    // This is the side of the current instance that experiences a collision with 'other'
+    if(!collided) {
+        // No need to check the collision side
+        Direction unused = UP;
+        return std::make_tuple(false, unused);
+    }
+
+    // This is the side of the current Enemy instance that experiences a collision with 'other'
     Direction collisionSide;
-    if(isTravelingUp()) {
-        if(other.direction == DOWN) {
+    switch(direction) {
+    case UP:
+        switch(other.direction) {
+        case DOWN:
             collisionSide = UP;
+            break;
+        case RIGHT:
+            collisionSide = getCollisionSide(other, LEFT, UP);
+            break;
+        case LEFT:
+            collisionSide = getCollisionSide(other, RIGHT, UP);
+            break;
+        default:
+            break;
         }
-        else if(other.isTravelingRight()) {
-            GLfloat xoverlap = getOverlapX(other);
-            GLfloat yoverlap = getOverlapY(other);
-            collisionSide = std::min(xoverlap, yoverlap) == xoverlap ? LEFT : UP;
-        }
-        else if(other.direction == LEFT) {
-            GLfloat xoverlap = getOverlapX(other);
-            GLfloat yoverlap = getOverlapY(other);
-            collisionSide = std::min(xoverlap, yoverlap) == xoverlap ? RIGHT : UP;
-        }
-    }
-    else if(direction == DOWN) {
-        if(other.direction == UP) {
+        break;
+    case DOWN:
+        switch(other.direction) {
+        case UP:
             collisionSide = DOWN;
+            break;
+        case RIGHT:
+            collisionSide = getCollisionSide(other, LEFT, DOWN);
+            break;
+        case LEFT:
+            collisionSide = getCollisionSide(other, RIGHT, DOWN);
+            break;
+        default:
+            break;
         }
-        else if(other.isTravelingRight()) {
-            GLfloat xoverlap = getOverlapX(other);
-            GLfloat yoverlap = getOverlapY(other);
-            collisionSide = std::min(xoverlap, yoverlap) == xoverlap ? LEFT : DOWN;
-        }
-        else if(other.direction == LEFT) {
-            GLfloat xoverlap = getOverlapX(other);
-            GLfloat yoverlap = getOverlapY(other);
-            collisionSide = std::min(xoverlap, yoverlap) == xoverlap ? RIGHT : DOWN;
-        }
-    }
-    else if(direction == LEFT) {
-        if(other.isTravelingRight()) {
+        break;
+    case LEFT:
+        switch(other.direction) {
+        case RIGHT:
             collisionSide = LEFT;
+            break;
+        case UP:
+            collisionSide = getCollisionSide(other, LEFT, DOWN);
+            break;
+        case DOWN:
+            collisionSide = getCollisionSide(other, LEFT, UP);
+            break;
+        default:
+            break;
         }
-        else if(other.isTravelingUp()) {
-            GLfloat xoverlap = getOverlapX(other);
-            GLfloat yoverlap = getOverlapY(other);
-            collisionSide = std::min(xoverlap, yoverlap) == xoverlap ? LEFT : DOWN;
-        }
-        else if(other.direction == DOWN) {
-            GLfloat xoverlap = getOverlapX(other);
-            GLfloat yoverlap = getOverlapY(other);
-            collisionSide = std::min(xoverlap, yoverlap) == xoverlap ? LEFT : UP;
-        }
-    }
-    else if(isTravelingRight()) {
-        if(other.direction == LEFT) {
+        break;
+    case RIGHT:
+        switch(other.direction) {
+        case LEFT:
             collisionSide = RIGHT;
+            break;
+        case UP:
+            collisionSide = getCollisionSide(other, RIGHT, DOWN);
+            break;
+        case DOWN:
+            collisionSide = getCollisionSide(other, RIGHT, UP);
+            break;
+        default:
+            break;
         }
-        else if(other.isTravelingUp()) {
-            GLfloat xoverlap = getOverlapX(other);
-            GLfloat yoverlap = getOverlapY(other);
-            collisionSide = std::min(xoverlap, yoverlap) == xoverlap ? RIGHT : DOWN;
-        }
-        else if(other.direction == DOWN) {
-            GLfloat xoverlap = getOverlapX(other);
-            GLfloat yoverlap = getOverlapY(other);
-            collisionSide = std::min(xoverlap, yoverlap) == xoverlap ? RIGHT : UP;
-        }
+        break;
     }
+
     return std::make_tuple(collided, collisionSide);
 }
 
