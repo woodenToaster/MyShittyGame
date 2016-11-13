@@ -7,7 +7,7 @@
 
 ## Level Generation
 - [ ] Make sure there is a path to the exit (A*)
-- [ ] Make sure no place entities overlap
+- [X] Make sure no placed entities overlap
 
 ## Rendering
 - [ ] Use indexed buffer draws
