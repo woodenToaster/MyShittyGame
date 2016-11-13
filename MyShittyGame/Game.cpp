@@ -2,9 +2,11 @@
 #include "ResourceManager.h"
 #include "EntityRenderer.h"
 #include "Player.h"
+#include "TextRenderer.h"
 
 EntityRenderer *renderer;
 Player *player;
+TextRenderer *text;
 
 Game::Game(GLuint width, GLuint height) :
     state(GAME_ACTIVE),
@@ -31,6 +33,10 @@ void Game::init() {
 
     // Init sound engine
     soundEngine = irrklang::createIrrKlangDevice();
+
+    // Init text renderer
+    text = new TextRenderer(width, height);
+    text->load("fonts/ocraext.TTF", 24);
 
     glm::vec2 playerPos = glm::vec2(0.0f, 400.0f);
     glm::vec2 playerSize = glm::vec2(40, 40);
@@ -222,4 +228,5 @@ void Game::render() {
         renderer->drawSprite(v(400, 80), v(60, 10), 0);
         renderer->drawSprite(v(400, 95), v(50, 10), 45);
     }
+    text->renderText("Game Over", 400, 400, 1);
 }

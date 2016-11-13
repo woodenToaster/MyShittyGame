@@ -86,3 +86,8 @@ ClientBin/
 # Audio files
 sounds/
 *.ogg
+
+# Font files
+fonts/
+*.tff
+
