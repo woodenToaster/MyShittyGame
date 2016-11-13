@@ -1,4 +1,19 @@
 # TODO
 
-[ ] Use indexed buffer draws
-[ ] Change all public members to private and add getters/setters
+## Gameplay
+- [ ] Add sounds
+- [ ] Add text (lives, level, time)
+- [ ] Show a visible exit
+
+## Level Generation
+- [ ] Make sure there is a path to the exit (A*)
+- [ ] Make sure no place entities overlap
+
+## Rendering
+- [ ] Use indexed buffer draws
+
+## Refactoring
+- [ ] Change all public members to private and add getters/setters
+
+## Testing
+- [ ] Set up Travis CI for Linux
