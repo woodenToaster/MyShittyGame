@@ -37,7 +37,7 @@ void Game::init() {
     player = new Player(playerPos, playerSize, soundEngine);
 
     levelNames.push_back("level1.txt");
-    levelNames.push_back("level10.txt");
+    levelNames.push_back("level2.txt");
     levelNames.push_back("level3.txt");
     levelNames.push_back("level4.txt");
     levelNames.push_back("level5.txt");

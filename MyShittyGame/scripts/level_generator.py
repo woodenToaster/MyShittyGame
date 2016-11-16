@@ -68,14 +68,23 @@ def generate_exit():
     return {'pos': map(str, pos), 'size': map(str, size), 'color': map(str, color)}
 
 
-def generate_enemies():
+def generate_enemies(level):
     data = {
         'pos': [],
         'size': [],
         'color': [],
         'direction': []
     }
-    num_enemies = random.randint(2, 15)
+
+    if level in range(4):
+        num_enemies = random.randint(2, 5)
+    elif level in range(4, 7):
+        num_enemies = random.randint(5, 9)
+    elif level in range(7, 10):
+        num_enemies = random.randint(7, 12)
+    else:
+        num_enemies = random.randint(12, 16)
+
     for _ in range(num_enemies):
         while True:
             pos = [random.randint(100, WIDTH), random.randint(0, HEIGHT)]
@@ -130,12 +139,12 @@ def print_level(wall_data, door_data, exit_data, enemy_data):
         print(join_data(enemy))
 
 
-def main():
+def main(level):
     data = {
         'wall_data': generate_walls(),
         'door_data': generate_door(),
         'exit_data': generate_exit(),
-        'enemy_data': generate_enemies()
+        'enemy_data': generate_enemies(level)
     }
     print_level(**data)
 
@@ -150,4 +159,4 @@ if __name__ == '__main__':
             filename = os.path.join('levels', "level{}.txt".format(i))
             with open(filename, 'w') as f:
                 sys.stdout = f
-                main()
+                main(i)

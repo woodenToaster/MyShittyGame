@@ -9,9 +9,13 @@
 ## Level Generation
 - [ ] Make sure there is a path to the exit (A*)
 - [X] Make sure no placed entities overlap
+- [X] Fewer enemies at first, then gradually increase the number
+- [ ] Generate levels at runtime instead of creating files.
 
 ## Rendering
 - [ ] Use indexed buffer draws
+- [ ] Add lighting and shadows
+- [ ] Add textures to objects
 
 ## Refactoring
 - [ ] Change all public members to private and add getters/setters
