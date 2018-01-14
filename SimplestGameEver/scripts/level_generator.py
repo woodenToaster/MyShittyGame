@@ -126,6 +126,84 @@ def join_data(data):
         return ','.join(data['pos']  + data['size'] + data['color'])
 
 
+# 20 X 30 Grid
+# step = 40
+# goal = (exit.x, exit.y)
+# start = (player.x, player,y)
+graph = [[str((i, j)) for i in range(20)] for j in range(30)]
+
+def recursive_dfs(graph, start, path=[]):
+  '''recursive depth first search from start'''
+  path = path + [start]
+  for node in graph[start]:
+    if not node in path:
+      path=recursive_dfs(graph, node, path)
+  return path
+
+
+def a_star_pathfinding(start, goal):
+    # The set of nodes already evaluated.
+    closedSet = {}
+    # The set of currently discovered nodes still to be evaluated.
+    # Initially, only the start node is known.
+    openSet = {start}
+    # For each node, which node it can most efficiently be reached from.
+    # If a node can be reached from many nodes, cameFrom will eventually contain the
+    # most efficient previous step.
+    cameFrom = the empty map
+
+    # For each node, the cost of getting from the start node to that node.
+    gScore = {'default': 1000000000}  # map with default value of Infinity
+    # The cost of going from start to start is zero.
+    gScore[start] = 0 
+    # For each node, the total cost of getting from the start node to the goal
+    # by passing by that node. That value is partly known, partly heuristic.
+    fScore = {'default': 100000000000} # map with default value of Infinity
+    # For the first node, that value is completely heuristic.
+    fScore[start] = heuristic_cost_estimate(start, goal)
+
+    while openSet is not empty:
+        current = min([fScore[x] for x in openSet]) # the node in openSet having the lowest fScore[] value
+        if current = goal:
+            return reconstruct_path(cameFrom, current)
+
+        openSet.remove(current)
+        closedSet.add(current)
+        for get_neighbors(current):
+            if neighbor in closedSet:
+                continue        # Ignore the neighbor which is already evaluated.
+            # The distance from start to a neighbor
+            tentative_gScore = gScore[current] + dist_between(current, neighbor)
+            if neighbor not in openSet:  # Discover a new node
+                openSet.add(neighbor)
+            else if tentative_gScore >= gScore[neighbor]
+                continue        # This is not a better path.
+
+            # This path is the best until now. Record it!
+            cameFrom[neighbor] = current
+            gScore[neighbor] = tentative_gScore
+            fScore[neighbor] = gScore[neighbor] + heuristic_cost_estimate(neighbor, goal)
+
+    return failure
+
+def get_neighbors(current):
+    pass
+
+def dist_between(first, second):
+    pass
+
+def reconstruct_path(cameFrom, current):
+    total_path = [current]
+    while current in cameFrom.keys():
+        current = cameFrom[current]
+        total_path.append(current)
+    return total_path
+
+# We don't care about the shortest path, just that there exists a path
+def heuristic_cost_estimater(start, goal):
+    return 1
+
+
 def print_level(wall_data, door_data, exit_data, enemy_data):
     print("walls")
     for wall in zip(wall_data['pos'], wall_data['size'], wall_data['color']):
