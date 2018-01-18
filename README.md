@@ -14,4 +14,4 @@ python scripts/level_generator.py 10
 ```
 The first level will always remain the same because it's hand-designed. (Hint: The exit is invisible)
 
-[Watch gameplay](https://www.youtube.com/watch?v=3CYdpYUg-cY&feature=youtu.be)
+[Watch gameplay](https://www.youtube.com/watch?v=ZC9uYoKoeso&feature=youtu.be)

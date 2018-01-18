@@ -228,7 +228,7 @@ def main(level):
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        for i in range(2, sys.argv[1]):
+        for i in range(2, int(sys.argv[1])):
             filename = os.path.join('levels', "level{}.txt".format(i))
             with open(filename, 'w') as f:
                 sys.stdout = f
