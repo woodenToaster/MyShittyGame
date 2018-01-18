@@ -83,9 +83,4 @@ ClientBin/
 *.pfx
 *.publishsettings
 
-# Audio files
-sounds/
-*.ogg
 
-# Level files
-levels/
